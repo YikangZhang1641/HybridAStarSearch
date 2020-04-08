@@ -149,8 +149,8 @@ bool HeuristicMap::GenerateHeuristicMap() {
               next_node->GetCost()) {
         heuristic_map_[next_node->GetIndex()] = next_node;
         pq_.push(next_node);
-        std::cout << "generate map node: " << next_node->GetIndex()
-                  << std::endl;
+        // std::cout << "generate map node: " << next_node->GetIndex()
+                  // << std::endl;
         continue;
       }
     }

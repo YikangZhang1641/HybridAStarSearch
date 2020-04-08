@@ -18,7 +18,7 @@ class HybridAStarSearchMap {
  private:
   HeuristicMap heuristic_map_;
   bool isTerminateState(std::shared_ptr<Node3d> node);
-  void nextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& nextnodes,
+  void nextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& next_nodes,
                          std::shared_ptr<Node3d>, double step_size);
   void update(double& x, double& y, double& phi, double steer, double dis);
 
@@ -26,9 +26,9 @@ class HybridAStarSearchMap {
   std::vector<std::vector<double>> obstacles_;
   std::unordered_map<std::string, std::shared_ptr<Node3d>> map_;
 
-  std::shared_ptr<Node3d> start_node_;
-  std::shared_ptr<Node3d> end_node_;
-  std::shared_ptr<Node3d> final_node_;
+  std::shared_ptr<Node3d> start_node_ = nullptr;
+  std::shared_ptr<Node3d> end_node_ = nullptr;
+  std::shared_ptr<Node3d> final_node_ = nullptr;
   std::vector<double> XYbounds_{0, 10, 0, 10};
 
   ros::NodeHandle nh;

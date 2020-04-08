@@ -1,5 +1,7 @@
 #include "planner/HybridAStarSearchMap.h"
 
+#include <set>
+
 void HybridAStarSearchMap::setXYResolution(double resolution) {
   heuristic_map_.setXYResolution(resolution);
   xy_grid_resolution_ = resolution;
@@ -31,13 +33,16 @@ void HybridAStarSearchMap::setBounds(double xmin, double xmax, double ymin,
 }
 
 bool HybridAStarSearchMap::pointIsValid(double x, double y) {
-  if (x <= XYbounds_[0] || x >= XYbounds_[1] || y <= XYbounds_[2] ||
-      y >= XYbounds_[3]) {
+  double gap = 0.3;
+  double border = 0.3;
+  if (x <= XYbounds_[0] + gap || x >= XYbounds_[1] - gap ||
+      y <= XYbounds_[2] + gap || y >= XYbounds_[3] - gap) {
     return false;
   }
 
   for (auto ob : obstacles_) {
-    if (ob[0] <= x && x <= ob[1] && ob[2] <= y && y <= ob[3]) {
+    if (ob[0] - border <= x && x <= ob[1] + border && ob[2] - border <= y &&
+        y <= ob[3] + border) {
       return false;
     }
   }
@@ -72,7 +77,7 @@ void HybridAStarSearchMap::plot() {
     marker.color.r = 1.0f - node->GetCost() / max_cost;
     marker.color.g = 0.0f;
     marker.color.b = 0.0f;
-    marker.color.a = 0.2;
+    marker.color.a = 0.5;
     marker.pose.position.x = node->GetGridX();
     marker.pose.position.y = node->GetGridY();
     marker.pose.position.z = 0;
@@ -163,29 +168,35 @@ void HybridAStarSearchMap::Search() {
       open_pq;
   open_pq.push(start_node_);
 
+  std::set<std::string> node_set;
+
   while (open_pq.size() > 0) {
     std::shared_ptr<Node3d> node = open_pq.top();
     open_pq.pop();
 
+    if (node_set.find(node->GetIndex()) != node_set.end()) {
+      continue;
+    }
+
+    // std::cout << "node " << node->GetX() << " " <<  node->GetY() << " " <<
+    // node->GetPhi() << " expanded!" << std::endl;
     map_[node->GetIndex()] = node;
+    node_set.emplace(node->GetIndex());
     max_cost = std::max(max_cost, node->GetCost());
 
-    std::vector<std::shared_ptr<Node3d>> nextnodes;
-    nextNodeGenerator(nextnodes, node, step_size_);
-    nextNodeGenerator(nextnodes, node, -step_size_);
+    std::vector<std::shared_ptr<Node3d>> next_nodes;
+    nextNodeGenerator(next_nodes, node, step_size_);
+    nextNodeGenerator(next_nodes, node, -step_size_);
 
-    for (std::shared_ptr<Node3d> nextnode : nextnodes) {
-      if (isTerminateState(nextnode)) {
-        final_node_ = nextnode;
+    for (std::shared_ptr<Node3d> next_node : next_nodes) {
+      if (isTerminateState(next_node)) {
+        final_node_ = next_node;
         std::cout << "Trajectory found!" << std::endl;
         return;
       }
 
-      if (map_.find(nextnode->GetIndex()) == map_.end() ||
-          map_[nextnode->GetIndex()]->GetCost() > nextnode->GetCost()) {
-        map_[nextnode->GetIndex()] = nextnode;
-        open_pq.push(nextnode);
-      }
+      map_[next_node->GetIndex()] = next_node;
+      open_pq.push(next_node);
     }
   }
 
