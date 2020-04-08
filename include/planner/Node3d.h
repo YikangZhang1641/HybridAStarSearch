@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "math.h"
+#include "planner/HeuristicMap.h"
 
 class Node3d {
  public:
@@ -40,10 +41,12 @@ class Node3d {
     cost_ = path_cost_ + heuristic_cost_;
   }
 
-  void SetHeuristic(const double heuristic) {
+  void SetHeuristicCost(const double heuristic) {
     heuristic_cost_ = heuristic;
     cost_ = path_cost_ + heuristic_cost_;
   }
+
+  void SetSteer(double steer) { steer_ = steer; }
 
   void SetPreNode(std::shared_ptr<Node3d> pre_node) { pre_node_ = pre_node; }
 
@@ -56,6 +59,7 @@ class Node3d {
   double GetPathCost() const { return path_cost_; }
   double GetHeuCost() const { return heuristic_cost_; }
   double GetCost() const { return cost_; }
+  double GetSteer() const { return steer_; }
   const std::string& GetIndex() const { return index_; }
   const std::string cal2dIndex() {
     return std::to_string(grid_x_) + "_" + std::to_string(grid_y_);
@@ -89,4 +93,5 @@ class Node3d {
   double cost_ = std::numeric_limits<double>::max();
   std::string index_;
   std::shared_ptr<Node3d> pre_node_ = nullptr;
+  double steer_ = 0;
 };
