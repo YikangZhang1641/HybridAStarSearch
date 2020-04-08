@@ -10,7 +10,8 @@ class HybridAStarSearchMap {
   void setBounds(double xmin, double xmax, double ymin, double ymax);
   void addObstacles(double left, double right, double up, double bottom);
   void GenerateHeuristicMap();
-  void readFromHeuristicMap(std::shared_ptr<Node3d>& node);
+  void readFromHeuristicMap(std::shared_ptr<Node3d> node);
+  bool pointIsValid(double x, double y);
   void plot();
 
  private:

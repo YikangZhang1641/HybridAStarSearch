@@ -29,6 +29,21 @@ void HybridAStarSearchMap::setBounds(double xmin, double xmax, double ymin,
   XYbounds_.emplace_back(ymax);
 }
 
+bool HybridAStarSearchMap::pointIsValid(double x, double y) {
+  if (x <= XYbounds_[0] || x >= XYbounds_[1] || y <= XYbounds_[2] ||
+      y >= XYbounds_[3]) {
+    return false;
+  }
+
+  for (auto ob : obstacles_) {
+    if (ob[0] <= x && x <= ob[1] && ob[2] <= y && y <= ob[3]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void HybridAStarSearchMap::addObstacles(double xmin, double xmax, double ymin,
                                         double ymax) {
   heuristic_map.addObstacles(xmin, xmax, ymin, ymax);
@@ -44,8 +59,8 @@ void HybridAStarSearchMap::GenerateHeuristicMap() {
   readFromHeuristicMap(end_node_);
 }
 
-void HybridAStarSearchMap::readFromHeuristicMap(std::shared_ptr<Node3d>& node) {
-  node->SetHeuristic(heuristic_map.getHeuristic(node->Get2dIndex()));
+void HybridAStarSearchMap::readFromHeuristicMap(std::shared_ptr<Node3d> node) {
+  node->SetHeuristic(heuristic_map.getHeuristic(node->cal2dIndex()));
 }
 
 void HybridAStarSearchMap::update(double& x, double& y, double& phi,
@@ -68,6 +83,14 @@ void HybridAStarSearchMap::nextNodeGenerator(
     for (int i = 0; i <= xy_grid_resolution_ * 1.41 / std::abs(step_size_);
          i++) {
       update(last_x, last_y, last_phi, steer, step_size_);
+      if (!pointIsValid(last_x, last_y)) {
+        flag = false;
+        break;
+      }
+    }
+
+    if (flag) {
+      double path_cost = cur_node->GetPathCost();
     }
   }
 }

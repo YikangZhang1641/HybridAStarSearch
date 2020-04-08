@@ -57,8 +57,8 @@ class Node3d {
   double GetHeuCost() const { return heuristic_cost_; }
   double GetCost() const { return cost_; }
   const std::string& GetIndex() const { return index_; }
-  const std::string& Get2dIndex() { 
-    return  std::to_string(grid_x_) + "_" + std::to_string(grid_y_); 
+  const std::string cal2dIndex() {
+    return std::to_string(grid_x_) + "_" + std::to_string(grid_y_);
   }
   std::shared_ptr<Node3d> GetPreNode() const { return pre_node_; }
   // static std::string CalcIndex(const double x, const double y,
@@ -84,8 +84,8 @@ class Node3d {
   int grid_x_ = 0;
   int grid_y_ = 0;
   int grid_phi_ = 0;
-  double path_cost_ = 0.0;
-  double heuristic_cost_ = 0.0;
+  double path_cost_ = std::numeric_limits<double>::max();
+  double heuristic_cost_ = std::numeric_limits<double>::max();
   double cost_ = std::numeric_limits<double>::max();
   std::string index_;
   std::shared_ptr<Node3d> pre_node_ = nullptr;

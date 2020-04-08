@@ -159,7 +159,7 @@ bool HeuristicMap::GenerateHeuristicMap() {
   std::cout << "Heuristic Map generated successfully! size: "
             << heuristic_map_.size() << std::endl;
 
-  start_node_->SetCost(heuristic_map_[start_node_->GetIndex()]->GetCost());
+  // start_node_->SetCost(heuristic_map_[start_node_->GetIndex()]->GetCost());
   return true;
 }
 
