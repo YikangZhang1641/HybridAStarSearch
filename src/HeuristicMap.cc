@@ -62,8 +62,8 @@ bool HeuristicMap::CheckConstraints(std::shared_ptr<Node2d> node) {
     return true;
   }
   for (const auto& ob : grid_obstacles_) {
-    if (ob[0] <= node->GetGridX() && node->GetGridX() <= ob[1] &&
-        ob[2] <= node->GetGridY() && node->GetGridY() <= ob[3]) {
+    if (ob[0] < node->GetGridX() && node->GetGridX() < ob[1] &&
+        ob[2] < node->GetGridY() && node->GetGridY() < ob[3]) {
       return false;
     }
   }
@@ -203,5 +203,8 @@ void HeuristicMap::plotHeuristicMap() {
 }
 
 double HeuristicMap::getHeuristic(std::string s) {
+  if (heuristic_map_.find(s) == heuristic_map_.end()) {
+    return std::numeric_limits<double>::max();
+  }
   return heuristic_map_[s]->GetCost();
 }

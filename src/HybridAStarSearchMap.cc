@@ -1,5 +1,4 @@
 #include "planner/HybridAStarSearchMap.h"
-
 #include <set>
 
 void HybridAStarSearchMap::setXYResolution(double resolution) {
@@ -7,17 +6,19 @@ void HybridAStarSearchMap::setXYResolution(double resolution) {
   xy_grid_resolution_ = resolution;
 }
 
-void HybridAStarSearchMap::setStartPoint(double x, double y, double phi) {
+bool HybridAStarSearchMap::setStartPoint(double x, double y, double phi) {
   heuristic_map_.setStartPoint(x, y, phi);
   start_node_ = std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
                                          phi_grid_resolution_, XYbounds_);
   start_node_->SetPathCost(0);
+  return pointIsValid(start_node_->GetX(), start_node_->GetY());
 }
 
-void HybridAStarSearchMap::setEndPoint(double x, double y, double phi) {
+bool HybridAStarSearchMap::setEndPoint(double x, double y, double phi) {
   heuristic_map_.setEndPoint(x, y, phi);
   end_node_ = std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
                                        phi_grid_resolution_, XYbounds_);
+  return pointIsValid(end_node_->GetX(), end_node_->GetY());
 }
 
 void HybridAStarSearchMap::setBounds(double xmin, double xmax, double ymin,
@@ -33,8 +34,8 @@ void HybridAStarSearchMap::setBounds(double xmin, double xmax, double ymin,
 }
 
 bool HybridAStarSearchMap::pointIsValid(double x, double y) {
-  double gap = 0.3;
-  double border = 0.3;
+  double gap = 0;
+  double border = 0;
   if (x <= XYbounds_[0] + gap || x >= XYbounds_[1] - gap ||
       y <= XYbounds_[2] + gap || y >= XYbounds_[3] - gap) {
     return false;
@@ -94,6 +95,7 @@ void HybridAStarSearchMap::plot() {
 
 void HybridAStarSearchMap::GenerateHeuristicMap() {
   heuristic_map_.GenerateHeuristicMap();
+
   start_node_->SetHeuristicCost(
       heuristic_map_.getHeuristic(start_node_->cal2dIndex()));
   end_node_->SetHeuristicCost(
@@ -124,6 +126,8 @@ void HybridAStarSearchMap::nextNodeGenerator(
     double last_y = cur_node->GetY();
     double last_phi = cur_node->GetPhi();
     bool flag = true;
+    // std::cout << "  curnode: " << last_x << " " << last_y << " " << last_phi
+    //           << std::endl;
 
     for (int i = 0; i <= xy_grid_resolution_ * 1.41 / std::abs(step_size_);
          i++) {
@@ -133,12 +137,16 @@ void HybridAStarSearchMap::nextNodeGenerator(
         break;
       }
     }
+    // std::cout << "    validation checked! " << flag << std::endl;
 
     if (flag) {
+      // std::cout << "    current pathcost: " << cur_node->GetPathCost()
+                // << std::endl;
       double path_cost =
           cur_node->GetPathCost() + MOVEMENT_PENALTY +
           std::abs(steer - cur_node->GetSteer() * STEER_CHANGE_PENALTY) +
           std::abs(steer) * STEER_PENALTY;
+      // std::cout << "    calculated pathcost: " << path_cost << std::endl;
       if (std::isinf(path_cost)) {
         continue;
       }
@@ -147,9 +155,12 @@ void HybridAStarSearchMap::nextNodeGenerator(
           last_x, last_y, last_phi, xy_grid_resolution_, phi_grid_resolution_,
           XYbounds_);
       p->SetSteer(steer);
+      // std::cout << "    test " << p->cal2dIndex() << " contains: "
+      //           << (heuristic_map_.heuristic_map_.find(p->cal2dIndex()) !=
+      //               heuristic_map_.heuristic_map_.end())
+      //           << std::endl;
       p->SetHeuristicCost(heuristic_map_.getHeuristic(p->cal2dIndex()));
       p->SetPathCost(path_cost);
-
       p->SetPreNode(cur_node);
       next_nodes.emplace_back(p);
     }
@@ -178,8 +189,10 @@ void HybridAStarSearchMap::Search() {
       continue;
     }
 
-    // std::cout << "node " << node->GetX() << " " <<  node->GetY() << " " <<
-    // node->GetPhi() << " expanded!" << std::endl;
+    // std::cout << "node " << node->GetX() << " (" << node->GetGridX() << ") "
+    //           << node->GetY() << " (" << node->GetGridY() << ") "
+    //           << node->GetPhi() << " expanded!" << std::endl;
+
     map_[node->GetIndex()] = node;
     node_set.emplace(node->GetIndex());
     max_cost = std::max(max_cost, node->GetCost());
@@ -195,6 +208,10 @@ void HybridAStarSearchMap::Search() {
         return;
       }
 
+      // std::cout << "next_node " << next_node->GetX() << " ("
+      //           << next_node->GetGridX() << ") " << next_node->GetY() << " ("
+      //           << next_node->GetGridY() << ") " << next_node->GetPhi()
+      //           << " searched!" << std::endl;
       map_[next_node->GetIndex()] = next_node;
       open_pq.push(next_node);
     }
