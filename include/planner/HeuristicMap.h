@@ -1,11 +1,13 @@
 #pragma once
+#include <costmap_converter/ObstacleArrayMsg.h>
 #include <geometry_msgs/PointStamped.h>
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <costmap_converter/ObstacleArrayMsg.h>
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/costmap_2d_ros.h>
+// #include <costmap_2d/costmap_2d.h>
+// #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/Polygon.h>
+#include <geometry_msgs/PolygonStamped.h>
+
 #include "planner/Node2d.h"
 #include "planner/Node3d.h"
 
@@ -26,12 +28,16 @@ class HeuristicMap {
   bool setStartPoint(double x, double y, double phi);
   bool setEndPoint(double x, double y, double phi);
   bool setBounds(double xmin, double xmax, double ymin, double ymax);
-  bool addObstacles(double left, double right, double up, double bottom);
+  void addObstacles(double left, double right, double up, double bottom);
+  void addPolygonObstacles(geometry_msgs::Polygon p);
+  void clearMap();
+  void clearObstacles();
   bool GenerateHeuristicMap();
-  void plotHeuristicMap();
+  void plotHeuristicMap(double xy_grid_resolution);
   double getHeuristic(std::string s);
 
   std::unordered_map<std::string, std::shared_ptr<Node2d>> heuristic_map_;
+
  private:
   double EuclidDistance(const double x1, const double y1, const double x2,
                         const double y2);
@@ -52,7 +58,6 @@ class HeuristicMap {
 
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;
-
 
   ros::NodeHandle nh;
   ros::Publisher pub;

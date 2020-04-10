@@ -11,9 +11,12 @@ class HybridAStarSearchMap {
   bool setEndPoint(double x, double y, double phi);
   void setBounds(double xmin, double xmax, double ymin, double ymax);
   void addObstacles(double left, double right, double up, double bottom);
+  void clearObstacles();
   void GenerateHeuristicMap();
+  void clearMap();
   bool pointIsValid(double x, double y);
-  void plot();
+  void plotHeuristicMap();
+  void plotMap();
 
  private:
   HeuristicMap heuristic_map_;

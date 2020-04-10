@@ -29,12 +29,14 @@ bool HeuristicMap::setBounds(double xmin, double xmax, double ymin,
   XYbounds_.emplace_back(ymin);
   XYbounds_.emplace_back(ymax);
 
-  max_grid_x_ = static_cast<int>((XYbounds_[1] - XYbounds_[0]) / xy_grid_resolution_) + 1;
-  max_grid_y_ = static_cast<int>((XYbounds_[3] - XYbounds_[2]) / xy_grid_resolution_) + 1;
+  max_grid_x_ =
+      static_cast<int>((XYbounds_[1] - XYbounds_[0]) / xy_grid_resolution_) + 1;
+  max_grid_y_ =
+      static_cast<int>((XYbounds_[3] - XYbounds_[2]) / xy_grid_resolution_) + 1;
   return XYbounds_.size() == 4;
 }
 
-bool HeuristicMap::addObstacles(double xmin, double xmax, double ymin,
+void HeuristicMap::addObstacles(double xmin, double xmax, double ymin,
                                 double ymax) {
   std::vector<int> grid_ob{
       static_cast<int>((xmin - XYbounds_[0]) / xy_grid_resolution_),
@@ -42,7 +44,6 @@ bool HeuristicMap::addObstacles(double xmin, double xmax, double ymin,
       static_cast<int>((ymin - XYbounds_[2]) / xy_grid_resolution_),
       static_cast<int>((ymax - XYbounds_[2]) / xy_grid_resolution_) + 1};
   grid_obstacles_.emplace_back(grid_ob);
-  return !grid_obstacles_.empty();
 }
 
 bool HeuristicMap::setXYResolution(double resolution) {
@@ -150,7 +151,7 @@ bool HeuristicMap::GenerateHeuristicMap() {
         heuristic_map_[next_node->GetIndex()] = next_node;
         pq_.push(next_node);
         // std::cout << "generate map node: " << next_node->GetIndex()
-                  // << std::endl;
+        // << std::endl;
         continue;
       }
     }
@@ -163,7 +164,23 @@ bool HeuristicMap::GenerateHeuristicMap() {
   return true;
 }
 
-void HeuristicMap::plotHeuristicMap() {
+void HeuristicMap::addPolygonObstacles(geometry_msgs::Polygon p) {
+  if (p.points.empty()) {
+    ROS_INFO("Polygon Obstacle empty!");
+    return;
+  }
+  geometry_msgs::Point32 first_point = p.points[0];
+  for (int i = 0; i + 1 < p.points.size(); i++) {
+    double start_x = (double)p.points[i].x;
+    double start_y = (double)p.points[i].y;
+    double end_x = (double)p.points[i + 1].x;
+    double end_y = (double)p.points[i + 1].y;
+// todo!!
+
+  }
+}
+
+void HeuristicMap::plotHeuristicMap(double xy_grid_resolution) {
   marker_array.markers.clear();
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
@@ -185,12 +202,12 @@ void HeuristicMap::plotHeuristicMap() {
     marker.color.g = 0.0f;
     marker.color.b = 0.0f;
     marker.color.a = 0.2;
-    marker.pose.position.x = node->GetGridX();
-    marker.pose.position.y = node->GetGridY();
+    marker.pose.position.x = node->GetGridX() * xy_grid_resolution;
+    marker.pose.position.y = node->GetGridY() * xy_grid_resolution;
     marker.pose.position.z = 0;
-    marker.scale.x = 1;
-    marker.scale.y = 1;
-    marker.scale.z = 1;
+    marker.scale.x = xy_grid_resolution;
+    marker.scale.y = xy_grid_resolution;
+    marker.scale.z = xy_grid_resolution;
     marker_array.markers.push_back(marker);
     ++marker_id;
     ++iter;
@@ -208,3 +225,7 @@ double HeuristicMap::getHeuristic(std::string s) {
   }
   return heuristic_map_[s]->GetCost();
 }
+
+void HeuristicMap::clearObstacles() { grid_obstacles_.clear(); }
+
+void HeuristicMap::clearMap() { heuristic_map_.clear(); }

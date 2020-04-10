@@ -1,4 +1,5 @@
 #include "planner/HybridAStarSearchMap.h"
+
 #include <set>
 
 void HybridAStarSearchMap::setXYResolution(double resolution) {
@@ -50,16 +51,32 @@ bool HybridAStarSearchMap::pointIsValid(double x, double y) {
   return true;
 }
 
+ void HybridAStarSearchMap::clearObstacles() {
+   obstacles_.clear();
+   heuristic_map_.clearObstacles();
+ }
+
+ void HybridAStarSearchMap::clearMap() {
+   map_.clear();
+   heuristic_map_.clearMap();
+ }
+ 
 void HybridAStarSearchMap::addObstacles(double xmin, double xmax, double ymin,
                                         double ymax) {
+  xmin = std::max(xmin, XYbounds_[0]);
+  xmax = std::min(xmax, XYbounds_[1]);
+  ymin = std::max(ymin, XYbounds_[2]);
+  ymax = std::min(ymax, XYbounds_[3]);
   heuristic_map_.addObstacles(xmin, xmax, ymin, ymax);
   std::vector<double> ob{xmin, xmax, ymin, ymax};
   obstacles_.emplace_back(ob);
 }
 
-void HybridAStarSearchMap::plot() {
-  heuristic_map_.plotHeuristicMap();
+void HybridAStarSearchMap::plotHeuristicMap() {
+  heuristic_map_.plotHeuristicMap(xy_grid_resolution_);
+}
 
+void HybridAStarSearchMap::plotMap() {
   marker_array.markers.clear();
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
@@ -141,7 +158,7 @@ void HybridAStarSearchMap::nextNodeGenerator(
 
     if (flag) {
       // std::cout << "    current pathcost: " << cur_node->GetPathCost()
-                // << std::endl;
+      // << std::endl;
       double path_cost =
           cur_node->GetPathCost() + MOVEMENT_PENALTY +
           std::abs(steer - cur_node->GetSteer() * STEER_CHANGE_PENALTY) +
