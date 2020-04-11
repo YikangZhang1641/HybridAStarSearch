@@ -38,7 +38,6 @@ class Node2d {
     return right.GetIndex() == index_;
   }
 
- private:
   static std::string ComputeStringIndex(int x_grid, int y_grid) {
     return std::to_string(x_grid) + "_" + std::to_string(y_grid);
   }

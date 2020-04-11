@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "math.h"
-#include "planner/HeuristicMap.h"
 
 class Node3d {
  public:

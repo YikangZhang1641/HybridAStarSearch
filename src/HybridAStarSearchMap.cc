@@ -8,7 +8,7 @@ void HybridAStarSearchMap::setXYResolution(double resolution) {
 }
 
 bool HybridAStarSearchMap::setStartPoint(double x, double y, double phi) {
-  heuristic_map_.setStartPoint(x, y, phi);
+  heuristic_map_.setStartPoint(x, y);
   start_node_ = std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
                                          phi_grid_resolution_, XYbounds_);
   start_node_->SetPathCost(0);
@@ -16,7 +16,7 @@ bool HybridAStarSearchMap::setStartPoint(double x, double y, double phi) {
 }
 
 bool HybridAStarSearchMap::setEndPoint(double x, double y, double phi) {
-  heuristic_map_.setEndPoint(x, y, phi);
+  heuristic_map_.setEndPoint(x, y);
   end_node_ = std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
                                        phi_grid_resolution_, XYbounds_);
   return pointIsValid(end_node_->GetX(), end_node_->GetY());
@@ -51,16 +51,16 @@ bool HybridAStarSearchMap::pointIsValid(double x, double y) {
   return true;
 }
 
- void HybridAStarSearchMap::clearObstacles() {
-   obstacles_.clear();
-   heuristic_map_.clearObstacles();
- }
+void HybridAStarSearchMap::clearObstacles() {
+  obstacles_.clear();
+  heuristic_map_.clearObstacles();
+}
 
- void HybridAStarSearchMap::clearMap() {
-   map_.clear();
-   heuristic_map_.clearMap();
- }
- 
+void HybridAStarSearchMap::clearMap() {
+  map_.clear();
+  heuristic_map_.clearMap();
+}
+
 void HybridAStarSearchMap::addObstacles(double xmin, double xmax, double ymin,
                                         double ymax) {
   xmin = std::max(xmin, XYbounds_[0]);
@@ -70,6 +70,10 @@ void HybridAStarSearchMap::addObstacles(double xmin, double xmax, double ymin,
   heuristic_map_.addObstacles(xmin, xmax, ymin, ymax);
   std::vector<double> ob{xmin, xmax, ymin, ymax};
   obstacles_.emplace_back(ob);
+}
+
+void HybridAStarSearchMap::addObstacles(geometry_msgs::Polygon p) {
+  heuristic_map_.addPolygonObstacles(p);
 }
 
 void HybridAStarSearchMap::plotHeuristicMap() {
@@ -108,6 +112,10 @@ void HybridAStarSearchMap::plotMap() {
   }
 
   pub.publish(marker_array);
+}
+
+bool HybridAStarSearchMap::mapInitialization() {
+  heuristic_map_.mapInitialization();
 }
 
 void HybridAStarSearchMap::GenerateHeuristicMap() {

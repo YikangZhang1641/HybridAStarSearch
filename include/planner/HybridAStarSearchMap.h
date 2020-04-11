@@ -1,4 +1,4 @@
-#include "planner/HeuristicMap.h"
+#include "planner/GridMap.h"
 
 class HybridAStarSearchMap {
  public:
@@ -17,9 +17,11 @@ class HybridAStarSearchMap {
   bool pointIsValid(double x, double y);
   void plotHeuristicMap();
   void plotMap();
+  void addObstacles(geometry_msgs::Polygon p);
+  bool mapInitialization();
 
  private:
-  HeuristicMap heuristic_map_;
+  GridMap heuristic_map_;
   bool isTerminateState(std::shared_ptr<Node3d> node);
   void nextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& next_nodes,
                          std::shared_ptr<Node3d>, double step_size);

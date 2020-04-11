@@ -11,7 +11,7 @@ class ObstacleAnalyzer {
       std::cout << "start point not available!" << std::endl;
       return;
     }
-    if (!search_map->setEndPoint(0, 0, 0)) {
+    if (!search_map->setEndPoint(0.1, 0, 0)) {
       std::cout << "end point not available!" << std::endl;
       return;
     }
@@ -26,27 +26,29 @@ class ObstacleAnalyzer {
     search_map->clearMap();
     std::cout << "read obstacle array" << std::endl;
     for (costmap_converter::ObstacleMsg ob : msg_ptr->obstacles) {
-      // geometry_msgs::PolygonStamped ps;
-      // ps.header.stamp = ros::Time::now();
-      // ps.header.frame_id = "map";
-      // ps.polygon = ob.polygon;
-      // pub_.publish(ps);
+      geometry_msgs::PolygonStamped ps;
+      ps.header.stamp = ros::Time::now();
+      ps.header.frame_id = "map";
+      ps.polygon = ob.polygon;
+      pub_.publish(ps);
       
-      double xmin = std::numeric_limits<double>::max();
-      double ymin = std::numeric_limits<double>::max();
-      double xmax = std::numeric_limits<double>::min();
-      double ymax = std::numeric_limits<double>::min();
+      // double xmin = std::numeric_limits<double>::max();
+      // double ymin = std::numeric_limits<double>::max();
+      // double xmax = std::numeric_limits<double>::min();
+      // double ymax = std::numeric_limits<double>::min();
 
-      for (geometry_msgs::Point32 p : ob.polygon.points) {
-        xmin = std::min(xmin, (double)p.x / 3);
-        ymin = std::min(ymin, (double)p.y / 3);
-        xmax = std::max(xmax, (double)p.x / 3);
-        ymax = std::max(ymax, (double)p.y / 3);
-      }
+      // for (geometry_msgs::Point32 p : ob.polygon.points) {
+      //   xmin = std::min(xmin, (double)p.x );
+      //   ymin = std::min(ymin, (double)p.y );
+      //   xmax = std::max(xmax, (double)p.x );
+      //   ymax = std::max(ymax, (double)p.y );
+      // }
       // std::cout << xmin << xmax << ymin << ymax << std::endl;
-      search_map->addObstacles(xmin, xmax, ymin, ymax);
+      // search_map->addObstacles(xmin, xmax, ymin, ymax);
+      search_map->addObstacles(ob.polygon);
     }
-    search_map->GenerateHeuristicMap();
+    search_map->mapInitialization();
+    // search_map->GenerateHeuristicMap();
 
     search_map->plotHeuristicMap();
   }

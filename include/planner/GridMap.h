@@ -8,6 +8,10 @@
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PolygonStamped.h>
 
+#include <deque>
+#include <set>
+#include <vector>
+
 #include "planner/Node2d.h"
 #include "planner/Node3d.h"
 
@@ -17,16 +21,18 @@
 //   double path_cost = 0.0;
 // };
 
-class HeuristicMap {
+class GridMap {
  public:
-  HeuristicMap() {
+  GridMap() {
     pub = nh.advertise<visualization_msgs::MarkerArray>("vis_obstacle", 10);
   };
-  ~HeuristicMap() = default;
+  ~GridMap() = default;
 
+  std::shared_ptr<Node2d> createNodeFromWorldCoord(double x, double y);
+  std::shared_ptr<Node2d> createNodeFromGridCoord(int x, int y);
   bool setXYResolution(double resolution);
-  bool setStartPoint(double x, double y, double phi);
-  bool setEndPoint(double x, double y, double phi);
+  bool setStartPoint(double x, double y);
+  bool setEndPoint(double x, double y);
   bool setBounds(double xmin, double xmax, double ymin, double ymax);
   void addObstacles(double left, double right, double up, double bottom);
   void addPolygonObstacles(geometry_msgs::Polygon p);
@@ -34,7 +40,10 @@ class HeuristicMap {
   void clearObstacles();
   bool GenerateHeuristicMap();
   void plotHeuristicMap(double xy_grid_resolution);
+  bool mapInitialization();
+
   double getHeuristic(std::string s);
+  std::shared_ptr<Node2d> getNode(double x, double y);
 
   std::unordered_map<std::string, std::shared_ptr<Node2d>> heuristic_map_;
 
@@ -44,6 +53,7 @@ class HeuristicMap {
   std::vector<std::shared_ptr<Node2d>> GenerateNextNodes(
       std::shared_ptr<Node2d> node);
   bool CheckConstraints(std::shared_ptr<Node2d> node);
+  bool CheckConstraints(const int node_grid_x, const int node_grid_y);
 
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
@@ -51,8 +61,8 @@ class HeuristicMap {
   std::vector<double> XYbounds_{0, 10, 0, 10};
   double max_grid_x_ = 0.0;
   double max_grid_y_ = 0.0;
-  std::shared_ptr<Node2d> start_node_;
-  std::shared_ptr<Node2d> end_node_;
+  std::shared_ptr<Node2d> start_node_ = nullptr;
+  std::shared_ptr<Node2d> end_node_ = nullptr;
 
   std::vector<std::vector<int>> grid_obstacles_;
 
