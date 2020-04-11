@@ -1,6 +1,14 @@
 #include "planner/HybridAStarSearchMap.h"
 
-#include <set>
+std::shared_ptr<Node3d> HybridAStarSearchMap::createNodeFromWorldCoord(
+    double x, double y, double phi) {
+  return std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
+                                  phi_grid_resolution_, XYbounds_);
+}
+
+std::shared_ptr<Node3d> HybridAStarSearchMap::createNodeFromGridCoord(int x, int y, int phi) {
+  return std::make_shared<Node3d>(x, y, phi, XYbounds_);
+}
 
 void HybridAStarSearchMap::setXYResolution(double resolution) {
   heuristic_map_.setXYResolution(resolution);
@@ -9,16 +17,14 @@ void HybridAStarSearchMap::setXYResolution(double resolution) {
 
 bool HybridAStarSearchMap::setStartPoint(double x, double y, double phi) {
   heuristic_map_.setStartPoint(x, y);
-  start_node_ = std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
-                                         phi_grid_resolution_, XYbounds_);
+  start_node_ = createNodeFromWorldCoord(x, y, phi);
   start_node_->SetPathCost(0);
   return pointIsValid(start_node_->GetX(), start_node_->GetY());
 }
 
 bool HybridAStarSearchMap::setEndPoint(double x, double y, double phi) {
   heuristic_map_.setEndPoint(x, y);
-  end_node_ = std::make_shared<Node3d>(x, y, phi, xy_grid_resolution_,
-                                       phi_grid_resolution_, XYbounds_);
+  end_node_ = createNodeFromWorldCoord(x, y, phi);
   return pointIsValid(end_node_->GetX(), end_node_->GetY());
 }
 
@@ -80,7 +86,7 @@ void HybridAStarSearchMap::plotHeuristicMap() {
   heuristic_map_.plotHeuristicMap(xy_grid_resolution_);
 }
 
-void HybridAStarSearchMap::plotMap() {
+void HybridAStarSearchMap::plotTrajectory() {
   marker_array.markers.clear();
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
@@ -96,16 +102,16 @@ void HybridAStarSearchMap::plotMap() {
   std::shared_ptr<Node3d> node = final_node_;
   while (node != nullptr) {
     marker.id = marker_id;
-    marker.color.r = 1.0f - node->GetCost() / max_cost;
+    marker.color.r = 1.0f;
     marker.color.g = 0.0f;
     marker.color.b = 0.0f;
-    marker.color.a = 0.5;
-    marker.pose.position.x = node->GetGridX();
-    marker.pose.position.y = node->GetGridY();
+    marker.color.a = 0.5f;
+    marker.pose.position.x = node->GetX();
+    marker.pose.position.y = node->GetY();
     marker.pose.position.z = 0;
-    marker.scale.x = 1;
-    marker.scale.y = 1;
-    marker.scale.z = 1;
+    marker.scale.x = 0.3;
+    marker.scale.y = 0.3;
+    marker.scale.z = 0.3;
     marker_array.markers.push_back(marker);
     ++marker_id;
     node = node->GetPreNode();
@@ -176,9 +182,8 @@ void HybridAStarSearchMap::nextNodeGenerator(
         continue;
       }
 
-      std::shared_ptr<Node3d> p = std::make_shared<Node3d>(
-          last_x, last_y, last_phi, xy_grid_resolution_, phi_grid_resolution_,
-          XYbounds_);
+      std::shared_ptr<Node3d> p =
+          createNodeFromWorldCoord(last_x, last_y, last_phi);
       p->SetSteer(steer);
       // std::cout << "    test " << p->cal2dIndex() << " contains: "
       //           << (heuristic_map_.heuristic_map_.find(p->cal2dIndex()) !=
@@ -204,13 +209,13 @@ void HybridAStarSearchMap::Search() {
       open_pq;
   open_pq.push(start_node_);
 
-  std::set<std::string> node_set;
+  std::set<std::string> visited;
 
   while (open_pq.size() > 0) {
     std::shared_ptr<Node3d> node = open_pq.top();
     open_pq.pop();
 
-    if (node_set.find(node->GetIndex()) != node_set.end()) {
+    if (visited.find(node->GetIndex()) != visited.end()) {
       continue;
     }
 
@@ -219,7 +224,7 @@ void HybridAStarSearchMap::Search() {
     //           << node->GetPhi() << " expanded!" << std::endl;
 
     map_[node->GetIndex()] = node;
-    node_set.emplace(node->GetIndex());
+    visited.emplace(node->GetIndex());
     max_cost = std::max(max_cost, node->GetCost());
 
     std::vector<std::shared_ptr<Node3d>> next_nodes;

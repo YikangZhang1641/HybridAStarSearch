@@ -27,10 +27,12 @@ class Node2d {
     index_ = ComputeStringIndex(grid_x_, grid_y_);
   }
 
-  void SetCost(const double cost) { cost_ = cost; }
+  void SetDestCost(const double dest_cost) { destination_cost_ = dest_cost; }
+  void SetObDis(const int dis) { obstacle_distance_ = dis; }
   double GetGridX() const { return grid_x_; }
   double GetGridY() const { return grid_y_; }
-  double GetCost() const { return cost_; }
+  double GetDist() const { return destination_cost_; }
+  double GetCost() const { return destination_cost_; }
 
   const std::string& GetIndex() const { return index_; }
 
@@ -45,6 +47,7 @@ class Node2d {
  private:
   int grid_x_ = 0;
   int grid_y_ = 0;
-  double cost_ = std::numeric_limits<double>::max();
+  double destination_cost_ = std::numeric_limits<double>::max();
+  int obstacle_distance_ = std::numeric_limits<int>::max();
   std::string index_;
 };

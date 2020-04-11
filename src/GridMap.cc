@@ -19,7 +19,7 @@ bool GridMap::setStartPoint(double x, double y) {
 
 bool GridMap::setEndPoint(double x, double y) {
   end_node_ = createNodeFromWorldCoord(x, y);
-  end_node_->SetCost(0);
+  end_node_->SetDestCost(0);
   if (end_node_ == nullptr) {
     std::cout << "end node setting failure!" << std::endl;
     return false;
@@ -58,32 +58,33 @@ bool GridMap::setXYResolution(double resolution) {
   // max_grid_y_ = (XYbounds_[3] - XYbounds_[2]) / xy_grid_resolution_ + 1;
 }
 
-bool GridMap::CheckConstraints(std::shared_ptr<Node2d> node) {
-  const int node_grid_x = node->GetGridX();
-  const int node_grid_y = node->GetGridY();
+// bool GridMap::CheckConstraints(std::shared_ptr<Node2d> node) {
+//   const int node_grid_x = node->GetGridX();
+//   const int node_grid_y = node->GetGridY();
+//   if (node_grid_x > max_grid_x_ || node_grid_x < 0 ||
+//       node_grid_y > max_grid_y_ || node_grid_y < 0) {
+//     return false;
+//   }
+//   // if (grid_obstacles_.empty()) {
+//   //   return true;
+//   // }
+//   // for (const auto& ob : grid_obstacles_) {
+//   //   if (ob[0] < node->GetGridX() && node->GetGridX() < ob[1] &&
+//   //       ob[2] < node->GetGridY() && node->GetGridY() < ob[3]) {
+//   //     return false;
+//   //   }
+//   // }
+//   return true;
+// }
+
+bool GridMap::insideMapRange(const int node_grid_x, const int node_grid_y) {
   if (node_grid_x > max_grid_x_ || node_grid_x < 0 ||
       node_grid_y > max_grid_y_ || node_grid_y < 0) {
     return false;
   }
-  // if (grid_obstacles_.empty()) {
-  //   return true;
-  // }
-  // for (const auto& ob : grid_obstacles_) {
-  //   if (ob[0] < node->GetGridX() && node->GetGridX() < ob[1] &&
-  //       ob[2] < node->GetGridY() && node->GetGridY() < ob[3]) {
-  //     return false;
-  //   }
-  // }
   return true;
 }
 
-bool GridMap::CheckConstraints(const int node_grid_x, const int node_grid_y) {
-  if (node_grid_x > max_grid_x_ || node_grid_x < 0 ||
-      node_grid_y > max_grid_y_ || node_grid_y < 0) {
-    return false;
-  }
-  return true;
-}
 std::vector<std::shared_ptr<Node2d>> GridMap::GenerateNextNodes(
     std::shared_ptr<Node2d> current_node) {
   double current_node_x = current_node->GetGridX();
@@ -93,39 +94,57 @@ std::vector<std::shared_ptr<Node2d>> GridMap::GenerateNextNodes(
   std::vector<std::shared_ptr<Node2d>> next_nodes;
   std::shared_ptr<Node2d> up =
       createNodeFromGridCoord(current_node_x, current_node_y + 1.0);
-  up->SetCost(current_node_path_cost + 1.0);
-  std::shared_ptr<Node2d> up_right =
-      createNodeFromGridCoord(current_node_x + 1.0, current_node_y + 1.0);
-  up_right->SetCost(current_node_path_cost + diagonal_distance);
+  up->SetDestCost(current_node_path_cost + 1.0);
+  // std::shared_ptr<Node2d> up_right =
+  //     createNodeFromGridCoord(current_node_x + 1.0, current_node_y + 1.0);
+  // up_right->SetDestCost(current_node_path_cost + diagonal_distance);
   std::shared_ptr<Node2d> right =
       createNodeFromGridCoord(current_node_x + 1.0, current_node_y);
-  right->SetCost(current_node_path_cost + 1.0);
-  std::shared_ptr<Node2d> down_right =
-      createNodeFromGridCoord(current_node_x + 1.0, current_node_y - 1.0);
-  down_right->SetCost(current_node_path_cost + diagonal_distance);
+  right->SetDestCost(current_node_path_cost + 1.0);
+  // std::shared_ptr<Node2d> down_right =
+  //     createNodeFromGridCoord(current_node_x + 1.0, current_node_y - 1.0);
+  // down_right->SetDestCost(current_node_path_cost + diagonal_distance);
   std::shared_ptr<Node2d> down =
       createNodeFromGridCoord(current_node_x, current_node_y - 1.0);
-  down->SetCost(current_node_path_cost + 1.0);
-  std::shared_ptr<Node2d> down_left =
-      createNodeFromGridCoord(current_node_x - 1.0, current_node_y - 1.0);
-  down_left->SetCost(current_node_path_cost + diagonal_distance);
+  down->SetDestCost(current_node_path_cost + 1.0);
+  // std::shared_ptr<Node2d> down_left =
+  //     createNodeFromGridCoord(current_node_x - 1.0, current_node_y - 1.0);
+  // down_left->SetDestCost(current_node_path_cost + diagonal_distance);
   std::shared_ptr<Node2d> left =
       createNodeFromGridCoord(current_node_x - 1.0, current_node_y);
-  left->SetCost(current_node_path_cost + 1.0);
-  std::shared_ptr<Node2d> up_left =
-      createNodeFromGridCoord(current_node_x - 1.0, current_node_y + 1.0);
-  up_left->SetCost(current_node_path_cost + diagonal_distance);
+  left->SetDestCost(current_node_path_cost + 1.0);
+  // std::shared_ptr<Node2d> up_left =
+  //     createNodeFromGridCoord(current_node_x - 1.0, current_node_y + 1.0);
+  // up_left->SetDestCost(current_node_path_cost + diagonal_distance);
 
   next_nodes.emplace_back(up);
-  next_nodes.emplace_back(up_right);
+  // next_nodes.emplace_back(up_right);
   next_nodes.emplace_back(right);
-  next_nodes.emplace_back(down_right);
+  // next_nodes.emplace_back(down_right);
   next_nodes.emplace_back(down);
-  next_nodes.emplace_back(down_left);
+  // next_nodes.emplace_back(down_left);
   next_nodes.emplace_back(left);
-  next_nodes.emplace_back(up_left);
+  // next_nodes.emplace_back(up_left);
   return next_nodes;
 }
+
+bool GridMap::GenerateDistanceMap() {
+  struct cmp {
+    bool operator()(const std::shared_ptr<Node2d> left,
+                    const std::shared_ptr<Node2d> right) const {
+      return left->GetDist() >= right->GetDist();
+    }
+  };
+  
+    std::priority_queue<std::shared_ptr<Node2d>,
+                      std::vector<std::shared_ptr<Node2d>>, cmp>
+      pq_;
+      for (std::string node_name : border_available_) {
+          pq_.push(heuristic_map_[node_name]);
+      }
+  
+      // to do: use the border to find dist map (the cloest obstacle for each node)
+  }
 
 bool GridMap::GenerateHeuristicMap() {
   struct cmp {
@@ -142,38 +161,28 @@ bool GridMap::GenerateHeuristicMap() {
   while (pq_.size() > 0) {
     std::shared_ptr<Node2d> cur_node = pq_.top();
     pq_.pop();
+    if (heuristic_map_.find(cur_node->GetIndex()) != heuristic_map_.end()) {
+      continue;
+    }
+    heuristic_map_[cur_node->GetIndex()] = cur_node;
 
     std::string cur_name = cur_node->GetIndex();
-    if (heuristic_map_.find(cur_name) == heuristic_map_.end() ||
-        heuristic_map_[cur_name]->GetCost() > cur_node->GetCost()) {
-      heuristic_map_.emplace(cur_node->GetIndex(), cur_node);
-    }
-
     std::vector<std::shared_ptr<Node2d>> next_nodes =
         std::move(GenerateNextNodes(cur_node));
     for (auto& next_node : next_nodes) {
-      if (!CheckConstraints(next_node)) {
+      if (!insideMapRange(next_node->GetGridX(), next_node->GetGridY()) ||
+          next_node->GetCost() == std::numeric_limits<double>::max()) {
+        border_available_.emplace(cur_node->GetIndex());
         continue;
       }
 
       max_cost = std::max(max_cost, next_node->GetCost());
-
-      if (heuristic_map_.find(next_node->GetIndex()) == heuristic_map_.end() ||
-          heuristic_map_[next_node->GetIndex()]->GetCost() >
-              next_node->GetCost()) {
-        heuristic_map_[next_node->GetIndex()] = next_node;
-        pq_.push(next_node);
-        // std::cout << "generate map node: " << next_node->GetIndex()
-        // << std::endl;
-        continue;
-      }
+      pq_.push(next_node);
     }
   }
-
   std::cout << "Heuristic Map generated successfully! size: "
             << heuristic_map_.size() << std::endl;
 
-  // start_node_->SetCost(heuristic_map_[start_node_->GetIndex()]->GetCost());
   return true;
 }
 
@@ -191,7 +200,7 @@ bool GridMap::mapInitialization() {
     for (int i = 0; i < 4; i++) {
       int nx = node->GetGridX() + DIRS[i][0];
       int ny = node->GetGridY() + DIRS[i][1];
-      if (!CheckConstraints(nx, ny)) {
+      if (!insideMapRange(nx, ny)) {
         continue;
       }
       std::string next_name = Node2d::ComputeStringIndex(nx, ny);
@@ -200,7 +209,7 @@ bool GridMap::mapInitialization() {
       }
 
       auto next_node = createNodeFromGridCoord(nx, ny);
-      next_node->SetCost(0);
+      next_node->SetDestCost(0);
       dq.push_front(next_node);
       heuristic_map_[next_name] = next_node;
       std::cout << "  next node " << next_node->GetGridX() << " "
@@ -240,17 +249,17 @@ void GridMap::addPolygonObstacles(geometry_msgs::Polygon p) {
         static_cast<int>(
             std::max(std::abs(start_x - end_x), std::abs(start_y - end_y)) /
             xy_grid_resolution_) +
-        1;  // +1 is important!! MUST make sure the segments are closed.
+        1;  // +1 is important!! MUST make sure the segments are enclosed.
     double delta_x = (end_x - start_x) / length;
     double delta_y = (end_y - start_y) / length;
 
     double x = start_x, y = start_y;
     for (int i = 0; i <= length; ++i) {
-      std::shared_ptr<Node2d> grid_p = getNode(x, y);
+      std::shared_ptr<Node2d> grid_p = getNodeFromWorldCoord(x, y);
       if (grid_p == nullptr) {
         grid_p = createNodeFromWorldCoord(x, y);
       }
-      grid_p->SetCost(0);
+      grid_p->SetDestCost(std::numeric_limits<double>::max());
       heuristic_map_[grid_p->GetIndex()] = grid_p;
       // std::cout << "X: " << grid_p->GetGridX() * xy_grid_resolution_ << " Y:"
       // << grid_p->GetGridY() * xy_grid_resolution_
@@ -262,7 +271,7 @@ void GridMap::addPolygonObstacles(geometry_msgs::Polygon p) {
   }
 }
 
-std::shared_ptr<Node2d> GridMap::getNode(double x, double y) {
+std::shared_ptr<Node2d> GridMap::getNodeFromWorldCoord(double x, double y) {
   int x_grid = static_cast<int>((x - XYbounds_[0]) / xy_grid_resolution_);
   int y_grid = static_cast<int>((y - XYbounds_[2]) / xy_grid_resolution_);
   std::string name = std::to_string(x_grid) + "_" + std::to_string(y_grid);

@@ -5,6 +5,9 @@ class HybridAStarSearchMap {
   HybridAStarSearchMap() {
     pub = nh.advertise<visualization_msgs::MarkerArray>("vis_map", 10);
   }
+
+  std::shared_ptr<Node3d> createNodeFromWorldCoord(double x, double y, double phi);
+  std::shared_ptr<Node3d> createNodeFromGridCoord(int x, int y, int phi);
   void Search();
   void setXYResolution(double resolution);
   bool setStartPoint(double x, double y, double phi);
@@ -16,7 +19,7 @@ class HybridAStarSearchMap {
   void clearMap();
   bool pointIsValid(double x, double y);
   void plotHeuristicMap();
-  void plotMap();
+  void plotTrajectory();
   void addObstacles(geometry_msgs::Polygon p);
   bool mapInitialization();
 
@@ -50,6 +53,6 @@ class HybridAStarSearchMap {
   double MAX_STEER = 1.0;
   double WHEEL_BASE = 1.0;
   double MOVEMENT_PENALTY = 1.0;
-  double STEER_PENALTY = 1;
-  double STEER_CHANGE_PENALTY = 1;
+  double STEER_PENALTY = 2;
+  double STEER_CHANGE_PENALTY = 3;
 };

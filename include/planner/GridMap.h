@@ -39,13 +39,14 @@ class GridMap {
   void clearMap();
   void clearObstacles();
   bool GenerateHeuristicMap();
+  bool GenerateDistanceMap();
   void plotHeuristicMap(double xy_grid_resolution);
   bool mapInitialization();
 
   double getHeuristic(std::string s);
-  std::shared_ptr<Node2d> getNode(double x, double y);
-
+  std::shared_ptr<Node2d> getNodeFromWorldCoord(double x, double y);
   std::unordered_map<std::string, std::shared_ptr<Node2d>> heuristic_map_;
+  
 
  private:
   double EuclidDistance(const double x1, const double y1, const double x2,
@@ -53,7 +54,7 @@ class GridMap {
   std::vector<std::shared_ptr<Node2d>> GenerateNextNodes(
       std::shared_ptr<Node2d> node);
   bool CheckConstraints(std::shared_ptr<Node2d> node);
-  bool CheckConstraints(const int node_grid_x, const int node_grid_y);
+  bool insideMapRange(const int node_grid_x, const int node_grid_y);
 
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
@@ -73,4 +74,5 @@ class GridMap {
   ros::Publisher pub;
 
   double max_cost = std::numeric_limits<double>::min();
+  std::set<std::string> border_available_;
 };

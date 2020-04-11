@@ -1,5 +1,6 @@
-#include "planner/HybridAStarSearchMap.h"
 #include <geometry_msgs/Point32.h>
+
+#include "planner/HybridAStarSearchMap.h"
 
 class ObstacleAnalyzer {
  public:
@@ -11,7 +12,7 @@ class ObstacleAnalyzer {
       std::cout << "start point not available!" << std::endl;
       return;
     }
-    if (!search_map->setEndPoint(0.1, 0, 0)) {
+    if (!search_map->setEndPoint(9, 9, 0)) {
       std::cout << "end point not available!" << std::endl;
       return;
     }
@@ -31,7 +32,7 @@ class ObstacleAnalyzer {
       ps.header.frame_id = "map";
       ps.polygon = ob.polygon;
       pub_.publish(ps);
-      
+
       // double xmin = std::numeric_limits<double>::max();
       // double ymin = std::numeric_limits<double>::max();
       // double xmax = std::numeric_limits<double>::min();
@@ -47,10 +48,18 @@ class ObstacleAnalyzer {
       // search_map->addObstacles(xmin, xmax, ymin, ymax);
       search_map->addObstacles(ob.polygon);
     }
-    search_map->mapInitialization();
-    // search_map->GenerateHeuristicMap();
+    // search_map->mapInitialization();
+    search_map->GenerateHeuristicMap();
+    
 
     search_map->plotHeuristicMap();
+    ros::Time begin = ros::Time::now();
+
+    search_map->Search();
+    ros::Time end = ros::Time::now();
+    std::cout << "time used for search: " << end - begin << std::endl;
+
+    search_map->plotTrajectory();
   }
 
  private:
