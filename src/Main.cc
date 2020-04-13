@@ -7,12 +7,12 @@ class ObstacleAnalyzer {
   ObstacleAnalyzer() = default;
   void Init() {
     search_map = new HybridAStarSearchMap();
-    search_map->setBounds(-10, 10, -10, 10);
-    if (!search_map->setStartPoint(0, 0, 0)) {
+    search_map->SetBounds(-10, 10, -10, 10);
+    if (!search_map->SetStartPoint(0, 0, 0)) {
       std::cout << "start point not available!" << std::endl;
       return;
     }
-    if (!search_map->setEndPoint(9, 9, 0)) {
+    if (!search_map->SetEndPoint(9, 9, 0)) {
       std::cout << "end point not available!" << std::endl;
       return;
     }
@@ -23,9 +23,8 @@ class ObstacleAnalyzer {
   }
 
   void ObstacleHandler(costmap_converter::ObstacleArrayMsgConstPtr msg_ptr) {
-    search_map->clearObstacles();
-    search_map->clearMap();
-    std::cout << "read obstacle array" << std::endl;
+    // search_map->ClearObstacles();
+    search_map->ClearMap();
     for (costmap_converter::ObstacleMsg ob : msg_ptr->obstacles) {
       geometry_msgs::PolygonStamped ps;
       ps.header.stamp = ros::Time::now();
@@ -46,20 +45,19 @@ class ObstacleAnalyzer {
       // }
       // std::cout << xmin << xmax << ymin << ymax << std::endl;
       // search_map->addObstacles(xmin, xmax, ymin, ymax);
-      search_map->addObstacles(ob.polygon);
+      search_map->AddObstacles(ob.polygon);
     }
-    // search_map->mapInitialization();
     search_map->GenerateHeuristicMap();
     
 
-    search_map->plotHeuristicMap();
+    search_map->PlotHeuristicMap();
     ros::Time begin = ros::Time::now();
 
     search_map->Search();
     ros::Time end = ros::Time::now();
     std::cout << "time used for search: " << end - begin << std::endl;
 
-    search_map->plotTrajectory();
+    search_map->PlotTrajectory();
   }
 
  private:
@@ -80,7 +78,7 @@ int main(int argc, char** argv) {
   ObstacleAnalyzer obstacle_analyzer;
   obstacle_analyzer.Init();
 
-  // search_map.setBounds(0, 10, 0, 10);
+  // search_map.SetBounds(0, 10, 0, 10);
   // // search_map.addObstacles(3, 4, 1, 4);
   // // search_map.addObstacles(2, 4, 7, 9);
   // // search_map.addObstacles(6, 7, 5, 10);
@@ -90,7 +88,7 @@ int main(int argc, char** argv) {
   //   std::cout << "start point not available!" << std::endl;
   //   return 0;
   // }
-  // if (!search_map.setEndPoint(1, 9, 3)) {
+  // if (!search_map.SetEndPoint(1, 9, 3)) {
   //   std::cout << "end point not available!" << std::endl;
   //   return 0;
   // }

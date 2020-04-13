@@ -27,26 +27,20 @@ class Node3d {
     index_ = ComputeStringIndex(grid_x_, grid_y_, grid_phi_);
   }
 
-  Node3d(const int grid_x, const int grid_y, const int grid_phi,
-         const std::vector<double>& XYbounds) {
+  Node3d(const int grid_x, const int grid_y, const int grid_phi) {
     grid_x_ = grid_x;
     grid_y_ = grid_y;
     grid_phi_ = grid_phi;
     index_ = ComputeStringIndex(grid_x_, grid_y_, grid_phi_);
   }
 
-  void SetPathCost(const double path_cost) {
-    path_cost_ = path_cost;
-    cost_ = path_cost_ + heuristic_cost_;
+  void SetPathCost(const double path_cost) { path_cost_ = path_cost; }
+  void SetObstacleCost(const double obstacle_cost) {
+    obstacle_cost_ = obstacle_cost;
   }
-
-  void SetHeuristicCost(const double heuristic) {
-    heuristic_cost_ = heuristic;
-    cost_ = path_cost_ + heuristic_cost_;
-  }
+  void SetHeuristicCost(const double heuristic) { heuristic_cost_ = heuristic; }
 
   void SetSteer(double steer) { steer_ = steer; }
-
   void SetPreNode(std::shared_ptr<Node3d> pre_node) { pre_node_ = pre_node; }
 
   double GetX() const { return x_; }
@@ -57,21 +51,26 @@ class Node3d {
   double GetGridY() const { return grid_y_; }
   double GetPathCost() const { return path_cost_; }
   double GetHeuCost() const { return heuristic_cost_; }
-  double GetCost() const { return cost_; }
+  double GetObsCost() const { return obstacle_cost_; }
+
+  double GetCost() const {
+    if (path_cost_ == std::numeric_limits<double>::max() ||
+        // obstacle_cost_ == std::numeric_limits<double>::max()||
+        heuristic_cost_ == std::numeric_limits<double>::max()) {
+      return std::numeric_limits<double>::max();
+    }
+    return path_cost_ + heuristic_cost_;  //+ obstacle_cost_;
+  }
+
   double GetSteer() const { return steer_; }
+
   const std::string& GetIndex() const { return index_; }
-  const std::string cal2dIndex() {
+  const std::string Cal2dIndex() {
     return std::to_string(grid_x_) + "_" + std::to_string(grid_y_);
   }
+
   std::shared_ptr<Node3d> GetPreNode() const { return pre_node_; }
-  // static std::string CalcIndex(const double x, const double y,
-  //                              const double xy_resolution,
-  //                              const std::vector<double>& XYbounds) {
-  //   // XYbounds with xmin, xmax, ymin, ymax
-  //   int grid_x = static_cast<int>((x - XYbounds[0]) / xy_resolution);
-  //   int grid_y = static_cast<int>((y - XYbounds[2]) / xy_resolution);
-  //   return ComputeStringIndex(grid_x, grid_y);
-  // }
+
   bool operator==(const Node3d& right) const {
     return right.GetIndex() == index_;
   }
@@ -89,7 +88,7 @@ class Node3d {
   int grid_phi_ = 0;
   double path_cost_ = std::numeric_limits<double>::max();
   double heuristic_cost_ = std::numeric_limits<double>::max();
-  double cost_ = std::numeric_limits<double>::max();
+  double obstacle_cost_ = std::numeric_limits<double>::max();
   std::string index_;
   std::shared_ptr<Node3d> pre_node_ = nullptr;
   double steer_ = 0;

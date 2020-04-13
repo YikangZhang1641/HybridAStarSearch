@@ -24,29 +24,35 @@
 class GridMap {
  public:
   GridMap() {
-    pub = nh.advertise<visualization_msgs::MarkerArray>("vis_obstacle", 10);
+    pub_map =
+        nh.advertise<visualization_msgs::MarkerArray>("vis_heuristic_map", 10);
+    pub_border =
+        nh.advertise<visualization_msgs::MarkerArray>("vis_border", 10);
+    pub_obstacle =
+        nh.advertise<visualization_msgs::MarkerArray>("vis_obstacle", 10);
   };
   ~GridMap() = default;
 
-  std::shared_ptr<Node2d> createNodeFromWorldCoord(double x, double y);
-  std::shared_ptr<Node2d> createNodeFromGridCoord(int x, int y);
-  bool setXYResolution(double resolution);
-  bool setStartPoint(double x, double y);
-  bool setEndPoint(double x, double y);
-  bool setBounds(double xmin, double xmax, double ymin, double ymax);
-  void addObstacles(double left, double right, double up, double bottom);
-  void addPolygonObstacles(geometry_msgs::Polygon p);
-  void clearMap();
-  void clearObstacles();
-  bool GenerateHeuristicMap();
-  bool GenerateDistanceMap();
-  void plotHeuristicMap(double xy_grid_resolution);
-  bool mapInitialization();
+  std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
+  std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
+  bool GenerateDestinationDistanceMap();
+  bool GenerateObstacleDistanceMap();
+  bool SetXYResolution(double resolution);
+  bool SetStartPoint(double x, double y);
+  bool SetEndPoint(double x, double y);
+  bool SetBounds(double xmin, double xmax, double ymin, double ymax);
+  void AddObstacles(double left, double right, double up, double bottom);
+  void AddPolygonObstacles(geometry_msgs::Polygon p);
+  void ClearMap();
+  void ClearObstacles();
+  void PlotHeuristicMap(double xy_grid_resolution);
+  void PlotBorders(double xy_grid_resolution);
+  void PlotObstacleMap(double xy_grid_resolution);
 
-  double getHeuristic(std::string s);
-  std::shared_ptr<Node2d> getNodeFromWorldCoord(double x, double y);
+  double GetHeuristic(std::string s);
+  std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
+  std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
   std::unordered_map<std::string, std::shared_ptr<Node2d>> heuristic_map_;
-  
 
  private:
   double EuclidDistance(const double x1, const double y1, const double x2,
@@ -54,7 +60,7 @@ class GridMap {
   std::vector<std::shared_ptr<Node2d>> GenerateNextNodes(
       std::shared_ptr<Node2d> node);
   bool CheckConstraints(std::shared_ptr<Node2d> node);
-  bool insideMapRange(const int node_grid_x, const int node_grid_y);
+  bool InsideMapRange(const int node_grid_x, const int node_grid_y);
 
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
@@ -71,7 +77,7 @@ class GridMap {
   visualization_msgs::Marker marker;
 
   ros::NodeHandle nh;
-  ros::Publisher pub;
+  ros::Publisher pub_map, pub_border, pub_obstacle;
 
   double max_cost = std::numeric_limits<double>::min();
   std::set<std::string> border_available_;

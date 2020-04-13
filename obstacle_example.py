@@ -24,12 +24,13 @@ ob2 = ObstacleMsg()
 ob2.header.frame_id = "map"
 ob2.polygon.points = [pt(7,1), pt(8,5), pt(8,1)]
 
-# ob3 = ObstacleMsg()
-# ob3.header.frame_id = "map"
-# ob3.polygon.points = [pt(0,2), pt(3,0), pt(5,-1)]
+ob3 = ObstacleMsg()
+ob3.header.frame_id = "map"
+ob3.polygon.points = []
+ob3.polygon.points = [pt(0,5), pt(0,10), pt(2,10), pt(2, 5)]
 
 msg.header.frame_id = "map"
-msg.obstacles = [ob1, ob2]
+msg.obstacles = [ob1, ob2, ob3]
 
 
 while not rospy.is_shutdown():

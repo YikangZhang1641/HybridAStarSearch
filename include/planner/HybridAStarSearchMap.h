@@ -6,29 +6,37 @@ class HybridAStarSearchMap {
     pub = nh.advertise<visualization_msgs::MarkerArray>("vis_map", 10);
   }
 
-  std::shared_ptr<Node3d> createNodeFromWorldCoord(double x, double y, double phi);
-  std::shared_ptr<Node3d> createNodeFromGridCoord(int x, int y, int phi);
+  std::shared_ptr<Node3d> CreateNodeFromWorldCoord(double x, double y,
+                                                   double phi);
+  std::shared_ptr<Node3d> CreateNodeFromGridCoord(int x, int y, int phi);
+  std::shared_ptr<Node3d> GetNodeFromWorldCoord(double x, double y, double phi);
+  std::shared_ptr<Node3d> GetNodeFromGridCoord(int x, int y, int phi);
+
+  std::string Calc2dIndex(const int grid_x, const int grid_y);
+  std::string Calc3dIndex(const int grid_x, const int grid_y, const int grid_phi);
+
   void Search();
-  void setXYResolution(double resolution);
-  bool setStartPoint(double x, double y, double phi);
-  bool setEndPoint(double x, double y, double phi);
-  void setBounds(double xmin, double xmax, double ymin, double ymax);
-  void addObstacles(double left, double right, double up, double bottom);
-  void clearObstacles();
+  void SetXYResolution(double resolution);
+  bool SetStartPoint(double x, double y, double phi);
+  bool SetEndPoint(double x, double y, double phi);
+  void SetBounds(double xmin, double xmax, double ymin, double ymax);
+  void AddObstacles(double left, double right, double up, double bottom);
+  void ClearObstacles();
   void GenerateHeuristicMap();
-  void clearMap();
-  bool pointIsValid(double x, double y);
-  void plotHeuristicMap();
-  void plotTrajectory();
-  void addObstacles(geometry_msgs::Polygon p);
-  bool mapInitialization();
+  void ClearMap();
+  bool PointIsValid(double x, double y);
+  void PlotHeuristicMap();
+  void PlotTrajectory();
+  void AddObstacles(geometry_msgs::Polygon p);
+
+
 
  private:
   GridMap heuristic_map_;
-  bool isTerminateState(std::shared_ptr<Node3d> node);
-  void nextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& next_nodes,
+  bool IsTerminateState(std::shared_ptr<Node3d> node);
+  void NextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& next_nodes,
                          std::shared_ptr<Node3d>, double step_size);
-  void update(double& x, double& y, double& phi, double steer, double dis);
+  void Update(double& x, double& y, double& phi, double steer, double dis);
 
   double step_size_ = 0.02;
   std::vector<std::vector<double>> obstacles_;
