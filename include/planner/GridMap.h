@@ -35,7 +35,11 @@ class GridMap {
 
   std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
   std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
+  std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
+  std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
   bool GenerateDestinationDistanceMap();
+  double GetHeuristic(std::string s);
+
   bool GenerateObstacleDistanceMap();
   bool SetXYResolution(double resolution);
   bool SetStartPoint(double x, double y);
@@ -49,9 +53,6 @@ class GridMap {
   void PlotBorders(double xy_grid_resolution);
   void PlotObstacleMap(double xy_grid_resolution);
 
-  double GetHeuristic(std::string s);
-  std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
-  std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
   std::unordered_map<std::string, std::shared_ptr<Node2d>> heuristic_map_;
 
  private:
@@ -81,4 +82,5 @@ class GridMap {
 
   double max_cost = std::numeric_limits<double>::min();
   std::set<std::string> border_available_;
+  std::set<std::string> border_unavailable_;
 };

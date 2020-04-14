@@ -159,8 +159,7 @@ bool GridMap::GenerateObstacleDistanceMap() {
       // }
 
       auto next_node = GetNodeFromGridCoord(nx, ny);
-      if (next_node->GetDestinationCost() ==
-          std::numeric_limits<double>::max()) {
+      if (next_node->IsUnavailable()) {
         continue;
       }
 
@@ -171,6 +170,33 @@ bool GridMap::GenerateObstacleDistanceMap() {
 
       next_node->SetObstacleDistance(cur_node->GetObstacleDistance() + 1.0);
       pq.emplace(next_node);
+    }
+
+    std::deque<std::shared_ptr<Node2d>> dq;
+    for (auto name : border_unavailable_) {
+      dq.emplace_front(heuristic_map_[name]);
+    }
+
+    while (!dq.empty()) {
+      auto cur_node = dq.back();
+      dq.pop_back();
+
+      if (visited.find(cur_node->GetIndex()) != visited.end()) {
+        continue;
+      }
+      visited.emplace(cur_node->GetIndex());
+      cur_node->SetUnavailable();
+      cur_node->SetDestinationCost(std::numeric_limits<double>::max());
+
+      for (int i = 0; i < 4; i++) {
+        int nx = cur_node->GetGridX() + DIRS[i][0];
+        int ny = cur_node->GetGridY() + DIRS[i][1];
+        if (!InsideMapRange(nx, ny)) {
+          continue;
+        }
+        auto next_node = GetNodeFromGridCoord(nx, ny);
+        dq.emplace_front(next_node);
+      }
     }
   }
   // to do: use the border to find dist map (the cloest obstacle for each node)
@@ -259,6 +285,8 @@ void GridMap::AddPolygonObstacles(geometry_msgs::Polygon p) {
     for (int i = 0; i <= length; ++i) {
       std::shared_ptr<Node2d> grid_p = GetNodeFromWorldCoord(x, y);
       grid_p->SetUnavailable();
+      grid_p->SetObstacleDistance(0);
+      border_unavailable_.emplace(grid_p->GetIndex());
 
       x += delta_x;
       y += delta_y;
@@ -302,8 +330,8 @@ void GridMap::PlotBorders(double xy_grid_resolution) {
   }
 
   pub_border.publish(marker_array);
-  std::cout << "marker array with size" << marker_array.markers.size()
-            << " published!" << std::endl;
+  // std::cout << "marker array with size" << marker_array.markers.size()
+  //           << " published!" << std::endl;
   return;
 }
 
@@ -345,8 +373,8 @@ void GridMap::PlotObstacleMap(double xy_grid_resolution) {
   }
 
   pub_obstacle.publish(marker_array);
-  std::cout << "marker array with size" << marker_array.markers.size()
-            << " published!" << std::endl;
+  // std::cout << "marker array with size" << marker_array.markers.size()
+  //           << " published!" << std::endl;
   return;
 }
 
@@ -388,8 +416,8 @@ void GridMap::PlotHeuristicMap(double xy_grid_resolution) {
   }
 
   pub_map.publish(marker_array);
-  std::cout << "marker array with size" << marker_array.markers.size()
-            << " published!" << std::endl;
+  // std::cout << "marker array with size" << marker_array.markers.size()
+  //           << " published!" << std::endl;
   return;
 }
 

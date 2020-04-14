@@ -13,23 +13,38 @@ class HybridAStarSearchMap {
   std::shared_ptr<Node3d> GetNodeFromGridCoord(int x, int y, int phi);
 
   std::string Calc2dIndex(const int grid_x, const int grid_y);
-  std::string Calc3dIndex(const int grid_x, const int grid_y, const int grid_phi);
+  std::string Calc3dIndex(const int grid_x, const int grid_y,
+                          const int grid_phi);
 
   void Search();
   void SetXYResolution(double resolution);
   bool SetStartPoint(double x, double y, double phi);
   bool SetEndPoint(double x, double y, double phi);
   void SetBounds(double xmin, double xmax, double ymin, double ymax);
-  void AddObstacles(double left, double right, double up, double bottom);
   void ClearObstacles();
+  bool CheckStartEndPoints();
   void GenerateHeuristicMap();
   void ClearMap();
-  bool PointIsValid(double x, double y);
+  bool InsideWorldMap(double x, double y);
+  bool CollisionDection(double x, double y, double phi);
   void PlotHeuristicMap();
   void PlotTrajectory();
   void AddObstacles(geometry_msgs::Polygon p);
+  double ObsCostMapping(double dis) {
+    if (dis <= 3) {
+      return 1;
+    }
+    return 0;
+  }
 
+  double GetObstacleDistance(std::shared_ptr<Node3d> p) {
+    return heuristic_map_.GetNodeFromGridCoord(p->GetGridX(), p->GetGridY())
+        ->GetObstacleDistance();
+  }
 
+  double GetObstacleDistance(double x, double y) {
+    return heuristic_map_.GetNodeFromWorldCoord(x, y)->GetObstacleDistance();
+  }
 
  private:
   GridMap heuristic_map_;
@@ -39,7 +54,6 @@ class HybridAStarSearchMap {
   void Update(double& x, double& y, double& phi, double steer, double dis);
 
   double step_size_ = 0.02;
-  std::vector<std::vector<double>> obstacles_;
   std::unordered_map<std::string, std::shared_ptr<Node3d>> map_;
 
   std::shared_ptr<Node3d> start_node_ = nullptr;
@@ -58,9 +72,14 @@ class HybridAStarSearchMap {
   double phi_grid_resolution_ = 0.2;
 
   int next_node_num_ = 5;
-  double MAX_STEER = 1.0;
-  double WHEEL_BASE = 1.0;
-  double MOVEMENT_PENALTY = 1.0;
-  double STEER_PENALTY = 2;
-  double STEER_CHANGE_PENALTY = 3;
+  double MAX_STEER = 0.8;
+  double WHEEL_BASE = 2.0;
+  double MOVEMENT_PENALTY = 1;
+  double STEER_PENALTY = 0.5;
+  double STEER_CHANGE_PENALTY = 1;
+
+  double VEHICLE_L = 2.0;
+  double VEHICLE_W = 1.0;
+
+  int count = 0;
 };

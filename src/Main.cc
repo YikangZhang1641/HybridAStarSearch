@@ -12,7 +12,7 @@ class ObstacleAnalyzer {
       std::cout << "start point not available!" << std::endl;
       return;
     }
-    if (!search_map->SetEndPoint(9, 9, 0)) {
+    if (!search_map->SetEndPoint(9, 0, 0)) {
       std::cout << "end point not available!" << std::endl;
       return;
     }
@@ -25,37 +25,31 @@ class ObstacleAnalyzer {
   void ObstacleHandler(costmap_converter::ObstacleArrayMsgConstPtr msg_ptr) {
     // search_map->ClearObstacles();
     search_map->ClearMap();
+
+     ros::Time start = ros::Time::now();
     for (costmap_converter::ObstacleMsg ob : msg_ptr->obstacles) {
-      geometry_msgs::PolygonStamped ps;
-      ps.header.stamp = ros::Time::now();
-      ps.header.frame_id = "map";
-      ps.polygon = ob.polygon;
-      pub_.publish(ps);
+      // geometry_msgs::PolygonStamped ps;
+      // ps.header.stamp = ros::Time::now();
+      // ps.header.frame_id = "map";
+      // ps.polygon = ob.polygon;
+      // pub_.publish(ps);
 
-      // double xmin = std::numeric_limits<double>::max();
-      // double ymin = std::numeric_limits<double>::max();
-      // double xmax = std::numeric_limits<double>::min();
-      // double ymax = std::numeric_limits<double>::min();
-
-      // for (geometry_msgs::Point32 p : ob.polygon.points) {
-      //   xmin = std::min(xmin, (double)p.x );
-      //   ymin = std::min(ymin, (double)p.y );
-      //   xmax = std::max(xmax, (double)p.x );
-      //   ymax = std::max(ymax, (double)p.y );
-      // }
-      // std::cout << xmin << xmax << ymin << ymax << std::endl;
-      // search_map->addObstacles(xmin, xmax, ymin, ymax);
       search_map->AddObstacles(ob.polygon);
     }
+    if (!search_map->CheckStartEndPoints()) {
+      std::cout << "start/end points invalid!" << std::endl;
+      return;
+    }
+
     search_map->GenerateHeuristicMap();
-    
-
+    std::cout << "time for map generation: " << ros::Time::now() - start <<
+    "\n" << std::endl;
     search_map->PlotHeuristicMap();
-    ros::Time begin = ros::Time::now();
 
+    start = ros::Time::now();
     search_map->Search();
-    ros::Time end = ros::Time::now();
-    std::cout << "time used for search: " << end - begin << std::endl;
+    std::cout << "time for search: " << ros::Time::now() - start << "\n"
+              << std::endl;
 
     search_map->PlotTrajectory();
   }

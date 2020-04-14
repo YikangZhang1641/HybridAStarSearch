@@ -45,6 +45,7 @@ class Node2d {
 
   bool IsUnavailable() { return unavailable_; }
   void SetUnavailable() { unavailable_ = true; }
+  void SetAvailable() { unavailable_ = false; }
 
   const std::string& GetIndex() const { return index_; }
 
@@ -60,7 +61,7 @@ class Node2d {
   int grid_x_ = 0;
   int grid_y_ = 0;
   double destination_cost_ = std::numeric_limits<double>::max();
-  double obstacle_distance_ = 1e-5;
+  double obstacle_distance_ = 0;
   std::string index_;
   bool unavailable_ = false;
 };

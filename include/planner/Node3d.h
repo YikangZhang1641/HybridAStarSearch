@@ -35,10 +35,10 @@ class Node3d {
   }
 
   void SetPathCost(const double path_cost) { path_cost_ = path_cost; }
+  void SetHeuristicCost(const double heuristic) { heuristic_cost_ = heuristic; }
   void SetObstacleCost(const double obstacle_cost) {
     obstacle_cost_ = obstacle_cost;
   }
-  void SetHeuristicCost(const double heuristic) { heuristic_cost_ = heuristic; }
 
   void SetSteer(double steer) { steer_ = steer; }
   void SetPreNode(std::shared_ptr<Node3d> pre_node) { pre_node_ = pre_node; }
@@ -49,6 +49,7 @@ class Node3d {
 
   double GetGridX() const { return grid_x_; }
   double GetGridY() const { return grid_y_; }
+
   double GetPathCost() const { return path_cost_; }
   double GetHeuCost() const { return heuristic_cost_; }
   double GetObsCost() const { return obstacle_cost_; }
