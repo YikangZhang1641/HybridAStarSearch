@@ -1,25 +1,22 @@
 #pragma once
 #include <costmap_converter/ObstacleArrayMsg.h>
+#include <geometry_msgs/Point32.h>
 #include <geometry_msgs/PointStamped.h>
-#include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
-// #include <costmap_2d/costmap_2d.h>
-// #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/PolygonStamped.h>
+#include <ros/ros.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <deque>
 #include <set>
 #include <vector>
 
+#include "hydra_utils/hydra_utils/proto/proto_file_utils_lib.hpp"
 #include "planner/Node2d.h"
 #include "planner/Node3d.h"
 
-// struct GridAStartResult {
-//   std::vector<double> x;
-//   std::vector<double> y;
-//   double path_cost = 0.0;
-// };
+namespace udrive {
+namespace planning {
 
 class GridMap {
  public:
@@ -33,35 +30,40 @@ class GridMap {
   };
   ~GridMap() = default;
 
-  std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
-  std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
-  std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
-  std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
-  bool GenerateDestinationDistanceMap();
-  double GetHeuristic(std::string s);
-
-  bool GenerateObstacleDistanceMap();
+  // configuration
   bool SetXYResolution(double resolution);
   bool SetStartPoint(double x, double y);
   bool SetEndPoint(double x, double y);
   bool SetBounds(double xmin, double xmax, double ymin, double ymax);
-  void AddObstacles(double left, double right, double up, double bottom);
+
+  // node
+  std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
+  std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
+  std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
+  std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
+
+  // add obstacles into the map
   void AddPolygonObstacles(geometry_msgs::Polygon p);
+
+  // heuristic map & obstacle map
+  bool GenerateDestinationDistanceMap();
+  bool GenerateObstacleDistanceMap();
   void ClearMap();
-  void ClearObstacles();
+
+  // get the 2d heuristic value
+  double GetHeuristic(std::string s);
+
+  // plot
   void PlotHeuristicMap(double xy_grid_resolution);
   void PlotBorders(double xy_grid_resolution);
   void PlotObstacleMap(double xy_grid_resolution);
 
-  std::unordered_map<std::string, std::shared_ptr<Node2d>> heuristic_map_;
-
  private:
-  double EuclidDistance(const double x1, const double y1, const double x2,
-                        const double y2);
   std::vector<std::shared_ptr<Node2d>> GenerateNextNodes(
       std::shared_ptr<Node2d> node);
-  bool CheckConstraints(std::shared_ptr<Node2d> node);
   bool InsideMapRange(const int node_grid_x, const int node_grid_y);
+
+  std::unordered_map<std::string, std::shared_ptr<Node2d>> map_2d_;
 
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
@@ -84,3 +86,5 @@ class GridMap {
   std::set<std::string> border_available_;
   std::set<std::string> border_unavailable_;
 };
+}  // namespace planning
+}  // namespace udrive

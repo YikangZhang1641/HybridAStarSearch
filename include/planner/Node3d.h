@@ -36,9 +36,7 @@ class Node3d {
 
   void SetPathCost(const double path_cost) { path_cost_ = path_cost; }
   void SetHeuristicCost(const double heuristic) { heuristic_cost_ = heuristic; }
-  void SetObstacleCost(const double obstacle_cost) {
-    obstacle_cost_ = obstacle_cost;
-  }
+
 
   void SetSteer(double steer) { steer_ = steer; }
   void SetPreNode(std::shared_ptr<Node3d> pre_node) { pre_node_ = pre_node; }
@@ -52,15 +50,13 @@ class Node3d {
 
   double GetPathCost() const { return path_cost_; }
   double GetHeuCost() const { return heuristic_cost_; }
-  double GetObsCost() const { return obstacle_cost_; }
 
   double GetCost() const {
     if (path_cost_ == std::numeric_limits<double>::max() ||
-        // obstacle_cost_ == std::numeric_limits<double>::max()||
         heuristic_cost_ == std::numeric_limits<double>::max()) {
       return std::numeric_limits<double>::max();
     }
-    return path_cost_ + heuristic_cost_;  //+ obstacle_cost_;
+    return path_cost_ + heuristic_cost_;
   }
 
   double GetSteer() const { return steer_; }
@@ -93,4 +89,6 @@ class Node3d {
   std::string index_;
   std::shared_ptr<Node3d> pre_node_ = nullptr;
   double steer_ = 0;
+
+  bool unavailable = false;
 };

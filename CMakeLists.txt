@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   visualization_msgs
+  hydra_utils
 )
 find_package(glog REQUIRED)
 
@@ -120,6 +121,10 @@ catkin_package(
 include_directories(
 include
   ${catkin_INCLUDE_DIRS}
+  ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_BINARY_DIR}/../
+  ${PROJECT_SOURCE_DIR}/../
 )
 
 ## Declare a C++ library
@@ -150,6 +155,7 @@ add_executable(${PROJECT_NAME}_node src/Main.cc src/HybridAStarSearchMap.cc src/
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
+  hydra_utils
 )
 
 #############

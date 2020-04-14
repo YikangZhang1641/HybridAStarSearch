@@ -1,5 +1,8 @@
 #include "planner/GridMap.h"
 
+namespace udrive {
+namespace planning {
+
 std::shared_ptr<Node2d> GridMap::CreateNodeFromWorldCoord(double x, double y) {
   return std::make_shared<Node2d>(x, y, xy_grid_resolution_, XYbounds_);
 }
@@ -17,10 +20,10 @@ std::shared_ptr<Node2d> GridMap::GetNodeFromWorldCoord(double x, double y) {
 
 std::shared_ptr<Node2d> GridMap::GetNodeFromGridCoord(int x_grid, int y_grid) {
   std::string name = std::to_string(x_grid) + "_" + std::to_string(y_grid);
-  if (heuristic_map_.find(name) == heuristic_map_.end()) {
-    heuristic_map_[name] = CreateNodeFromGridCoord(x_grid, y_grid);
+  if (map_2d_.find(name) == map_2d_.end()) {
+    map_2d_[name] = CreateNodeFromGridCoord(x_grid, y_grid);
   }
-  return heuristic_map_[name];
+  return map_2d_[name];
 }
 
 bool GridMap::SetStartPoint(double x, double y) {
@@ -54,39 +57,9 @@ bool GridMap::SetBounds(double xmin, double xmax, double ymin, double ymax) {
   return XYbounds_.size() == 4;
 }
 
-void GridMap::AddObstacles(double xmin, double xmax, double ymin, double ymax) {
-  std::vector<int> grid_ob{
-      static_cast<int>((xmin - XYbounds_[0]) / xy_grid_resolution_),
-      static_cast<int>((xmax - XYbounds_[0]) / xy_grid_resolution_) + 1,
-      static_cast<int>((ymin - XYbounds_[2]) / xy_grid_resolution_),
-      static_cast<int>((ymax - XYbounds_[2]) / xy_grid_resolution_) + 1};
-  grid_obstacles_.emplace_back(grid_ob);
-}
-
 bool GridMap::SetXYResolution(double resolution) {
   xy_grid_resolution_ = resolution;
-  // max_grid_x_ = (XYbounds_[1] - XYbounds_[0]) / xy_grid_resolution_ + 1;
-  // max_grid_y_ = (XYbounds_[3] - XYbounds_[2]) / xy_grid_resolution_ + 1;
 }
-
-// bool GridMap::CheckConstraints(std::shared_ptr<Node2d> node) {
-//   const int node_grid_x = node->GetGridX();
-//   const int node_grid_y = node->GetGridY();
-//   if (node_grid_x > max_grid_x_ || node_grid_x < 0 ||
-//       node_grid_y > max_grid_y_ || node_grid_y < 0) {
-//     return false;
-//   }
-//   // if (grid_obstacles_.empty()) {
-//   //   return true;
-//   // }
-//   // for (const auto& ob : grid_obstacles_) {
-//   //   if (ob[0] < node->GetGridX() && node->GetGridX() < ob[1] &&
-//   //       ob[2] < node->GetGridY() && node->GetGridY() < ob[3]) {
-//   //     return false;
-//   //   }
-//   // }
-//   return true;
-// }
 
 bool GridMap::InsideMapRange(const int node_grid_x, const int node_grid_y) {
   if (node_grid_x > max_grid_x_ || node_grid_x < 0 ||
@@ -110,8 +83,12 @@ std::vector<std::shared_ptr<Node2d>> GridMap::GenerateNextNodes(
 
   int DIRS[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
   for (int i = 0; i < 4; i++) {
-    std::shared_ptr<Node2d> next = GetNodeFromGridCoord(
-        current_node_x + DIRS[i][0], current_node_y + DIRS[i][1]);
+    double next_x = current_node_x + DIRS[i][0];
+    double next_y = current_node_y + DIRS[i][1];
+    if (!InsideMapRange(next_x, next_y)) {
+      continue;
+    }
+    std::shared_ptr<Node2d> next = GetNodeFromGridCoord(next_x, next_y);
     if (next->GetDestinationCost() > next_node_path_cost) {
       next->SetDestinationCost(next_node_path_cost);
     }
@@ -139,7 +116,7 @@ bool GridMap::GenerateObstacleDistanceMap() {
       continue;
     }
     visited.emplace(node_name);
-    pq.push(heuristic_map_[node_name]);
+    pq.push(map_2d_[node_name]);
   }
 
   while (!pq.empty()) {
@@ -153,10 +130,6 @@ bool GridMap::GenerateObstacleDistanceMap() {
       if (!InsideMapRange(nx, ny)) {
         continue;
       }
-      // std::string next_name = Node2d::ComputeStringIndex(nx, ny);
-      // if (heuristic_map_.find(next_name) == heuristic_map_.end()) {
-      //   continue;
-      // }
 
       auto next_node = GetNodeFromGridCoord(nx, ny);
       if (next_node->IsUnavailable()) {
@@ -174,7 +147,7 @@ bool GridMap::GenerateObstacleDistanceMap() {
 
     std::deque<std::shared_ptr<Node2d>> dq;
     for (auto name : border_unavailable_) {
-      dq.emplace_front(heuristic_map_[name]);
+      dq.emplace_front(map_2d_[name]);
     }
 
     while (!dq.empty()) {
@@ -199,6 +172,8 @@ bool GridMap::GenerateObstacleDistanceMap() {
       }
     }
   }
+  std::cout << "Obstacle Map generated successfully! visited size: "
+            << visited.size() << std::endl;
   // to do: use the border to find dist map (the cloest obstacle for each node)
 }
 
@@ -240,8 +215,8 @@ bool GridMap::GenerateDestinationDistanceMap() {
       pq_.push(next_node);
     }
   }
-  std::cout << "Heuristic Map generated successfully! size: "
-            << heuristic_map_.size() << std::endl;
+  std::cout << "Heuristic Map generated successfully! visited size: "
+            << visited.size() << " map size: " << map_2d_.size() << std::endl;
 
   return true;
 }
@@ -310,7 +285,7 @@ void GridMap::PlotBorders(double xy_grid_resolution) {
   std::set<std::string, std::shared_ptr<Node2d>>::iterator iter =
       border_available_.begin();
   while (iter != border_available_.end()) {
-    std::shared_ptr<Node2d> node = heuristic_map_[*iter];
+    std::shared_ptr<Node2d> node = map_2d_[*iter];
     marker.id = marker_id;
     marker.color.r = 0.0;
     marker.color.g = 0.0f;
@@ -349,8 +324,8 @@ void GridMap::PlotObstacleMap(double xy_grid_resolution) {
   int marker_id = 0;
 
   std::unordered_map<std::string, std::shared_ptr<Node2d>>::iterator iter =
-      heuristic_map_.begin();
-  while (iter != heuristic_map_.end()) {
+      map_2d_.begin();
+  while (iter != map_2d_.end()) {
     auto node = iter->second;
     marker.id = marker_id;
     marker.color.r = 0.0f;
@@ -392,8 +367,8 @@ void GridMap::PlotHeuristicMap(double xy_grid_resolution) {
   int marker_id = 0;
 
   std::unordered_map<std::string, std::shared_ptr<Node2d>>::iterator iter =
-      heuristic_map_.begin();
-  while (iter != heuristic_map_.end()) {
+      map_2d_.begin();
+  while (iter != map_2d_.end()) {
     auto node = iter->second;
     marker.id = marker_id;
     marker.color.r = 1.0f - node->GetDestinationCost() / 50;
@@ -422,15 +397,15 @@ void GridMap::PlotHeuristicMap(double xy_grid_resolution) {
 }
 
 double GridMap::GetHeuristic(std::string s) {
-  if (heuristic_map_.find(s) == heuristic_map_.end()) {
+  if (map_2d_.find(s) == map_2d_.end()) {
     return std::numeric_limits<double>::max();
   }
-  return heuristic_map_[s]->GetCost();
+  return map_2d_[s]->GetCost();
 }
-
-void GridMap::ClearObstacles() { grid_obstacles_.clear(); }
 
 void GridMap::ClearMap() {
-  heuristic_map_.clear();
+  map_2d_.clear();
   border_available_.clear();
 }
+}  // namespace planning
+}  // namespace udrive
