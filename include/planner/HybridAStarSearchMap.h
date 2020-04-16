@@ -64,8 +64,8 @@ class HybridAStarSearchMap {
 
   // map params
   std::vector<double> XYbounds_{0, 10, 0, 10};
-  double max_grid_x_ = 0.0;
-  double max_grid_y_ = 0.0;
+  int max_grid_x_ = 0;
+  int max_grid_y_ = 0;
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
 
@@ -82,11 +82,14 @@ class HybridAStarSearchMap {
   double step_size_ = 0.02;
   double MAX_STEER = 0.8;
   double WHEEL_BASE = 2.0;
-  double MOVEMENT_PENALTY = 2;
-  double STEER_PENALTY = 0.5;
-  double STEER_CHANGE_PENALTY = 1;
   double VEHICLE_L = 2.0;
   double VEHICLE_W = 1.0;
+
+  // penalty
+  double FORWARD_PENALTY = 1;
+  double BACKWARD_PENALTY = 5;
+  double STEER_PENALTY = 1;
+  double STEER_CHANGE_PENALTY = 1;
 
   int count = 0;
 };

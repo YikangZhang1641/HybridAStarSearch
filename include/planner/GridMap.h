@@ -59,7 +59,7 @@ class GridMap {
   void PlotObstacleMap(double xy_grid_resolution);
 
  private:
-  // expansion
+  // for expansion
   std::vector<std::shared_ptr<Node2d>> GenerateNextNodes(
       std::shared_ptr<Node2d> node);
   bool InsideGridMap(const int node_grid_x, const int node_grid_y);
@@ -85,7 +85,7 @@ class GridMap {
   // obstacle borders
   std::set<std::string> border_available_;
   std::set<std::string> border_unavailable_;
-  
+
   double max_cost = std::numeric_limits<double>::min();
 };
 }  // namespace planning

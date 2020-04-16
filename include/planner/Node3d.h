@@ -33,11 +33,25 @@ class Node3d : public Node {
   void SetPathCost(const double path_cost) { path_cost_ = path_cost; }
   void SetHeuristicCost(const double heuristic) { heuristic_cost_ = heuristic; }
 
+  void SetDirection(bool forward) {forward_ = forward;}
   void SetSteer(double steer) { steer_ = steer; }
   void SetPreNode(std::shared_ptr<Node3d> pre_node) { pre_node_ = pre_node; }
 
   double GetX() const { return x_; }
   double GetY() const { return y_; }
+  double GetPhi() {
+    while (phi_ > M_PI) {
+      phi_ -= M_PI;
+    }
+    while (phi_ < -M_PI) {
+      phi_ += M_PI;
+    }
+    return phi_;
+  }
+  double GetSteer() const { return steer_; }
+  bool GetDirection() { return forward_; }
+  std::shared_ptr<Node3d> GetPreNode() const { return pre_node_; }
+
   double GetPathCost() const { return path_cost_; }
   double GetCost() const {
     if (path_cost_ == std::numeric_limits<double>::max() ||
@@ -46,10 +60,6 @@ class Node3d : public Node {
     }
     return path_cost_ + heuristic_cost_;
   }
-
-  double GetPhi() const { return phi_; }
-  double GetSteer() const { return steer_; }
-  std::shared_ptr<Node3d> GetPreNode() const { return pre_node_; }
 
   const std::string Cal2dIndex() {
     return ComputeStringIndex(grid_x_, grid_y_);
@@ -69,4 +79,5 @@ class Node3d : public Node {
   double heuristic_cost_ = std::numeric_limits<double>::max();
   std::shared_ptr<Node3d> pre_node_ = nullptr;
   double steer_ = 0;
+  bool forward_ = true;
 };

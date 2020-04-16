@@ -175,16 +175,18 @@ bool GridMap::GenerateObstacleDistanceMap() {
       pq;
   std::set<std::string> visited;
   for (std::string node_name : border_available_) {
-    if (visited.find(node_name) != visited.end()) {
-      continue;
-    }
-    visited.emplace(node_name);
     pq.push(map_2d_[node_name]);
   }
 
+  // for available region
   while (!pq.empty()) {
     auto cur_node = pq.top();
     pq.pop();
+
+    if (visited.find(cur_node->GetIndex()) != visited.end()) {
+      continue;
+    }
+    visited.emplace(cur_node->GetIndex());
 
     for (int i = 0; i < 4; i++) {
       int nx = cur_node->GetGridX() + DIRS[i][0];
@@ -195,46 +197,46 @@ bool GridMap::GenerateObstacleDistanceMap() {
       }
 
       auto next_node = GetNodeFromGridCoord(nx, ny);
+      if (next_node == nullptr) {
+        next_node = CreateNodeFromWorldCoord(nx, ny);
+      }
+
       if (next_node->IsUnavailable()) {
         continue;
       }
 
-      if (visited.find(next_node->GetIndex()) != visited.end()) {
-        continue;
-      }
-      visited.emplace(next_node->GetIndex());
-
       next_node->SetObstacleDistance(cur_node->GetObstacleDistance() + 1.0);
       pq.emplace(next_node);
     }
+  }
 
-    std::deque<std::shared_ptr<Node2d>> dq;
-    for (auto name : border_unavailable_) {
-      dq.emplace_front(map_2d_[name]);
+  // for unavailable region
+  std::deque<std::shared_ptr<Node2d>> dq;
+  for (auto name : border_unavailable_) {
+    dq.emplace_front(map_2d_[name]);
+  }
+  while (!dq.empty()) {
+    auto cur_node = dq.back();
+    dq.pop_back();
+
+    if (visited.find(cur_node->GetIndex()) != visited.end()) {
+      continue;
     }
+    visited.emplace(cur_node->GetIndex());
+    cur_node->SetUnavailable();
+    cur_node->SetDestinationCost(std::numeric_limits<double>::max());
 
-    while (!dq.empty()) {
-      auto cur_node = dq.back();
-      dq.pop_back();
-
-      if (visited.find(cur_node->GetIndex()) != visited.end()) {
+    for (int i = 0; i < 4; i++) {
+      int nx = cur_node->GetGridX() + DIRS[i][0];
+      int ny = cur_node->GetGridY() + DIRS[i][1];
+      if (!InsideGridMap(nx, ny)) {
         continue;
       }
-      visited.emplace(cur_node->GetIndex());
-      cur_node->SetUnavailable();
-      cur_node->SetDestinationCost(std::numeric_limits<double>::max());
-
-      for (int i = 0; i < 4; i++) {
-        int nx = cur_node->GetGridX() + DIRS[i][0];
-        int ny = cur_node->GetGridY() + DIRS[i][1];
-        if (!InsideGridMap(nx, ny)) {
-          continue;
-        }
-        auto next_node = GetNodeFromGridCoord(nx, ny);
-        dq.emplace_front(next_node);
-      }
+      auto next_node = GetNodeFromGridCoord(nx, ny);
+      dq.emplace_front(next_node);
     }
   }
+
   std::cout << "Obstacle Map generated successfully! visited size: "
             << visited.size() << std::endl;
 }
@@ -367,7 +369,7 @@ void GridMap::PlotObstacleMap(double xy_grid_resolution) {
   return;
 }
 
-// expansion
+// for expansion
 std::vector<std::shared_ptr<Node2d>> GridMap::GenerateNextNodes(
     std::shared_ptr<Node2d> current_node) {
   std::vector<std::shared_ptr<Node2d>> next_nodes;

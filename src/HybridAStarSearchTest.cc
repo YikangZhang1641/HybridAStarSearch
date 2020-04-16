@@ -25,7 +25,7 @@ class ObstacleAnalyzer {
     }
 
     search_map->SetStartPoint(0, 0, 0);
-    search_map->SetEndPoint(9, 0, 0);
+    search_map->SetEndPoint(9, 9, M_PI);
     if (!search_map->CheckStartEndPoints()) {
       ROS_ERROR("start/end points invalid!");
       return;

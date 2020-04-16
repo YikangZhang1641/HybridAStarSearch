@@ -213,7 +213,7 @@ double HybridAStarSearchMap::GetObstacleDistance(double x, double y) {
 
 double HybridAStarSearchMap::ObstacleDistancePenalty(double dis) {
   // need to define some better functions for obstacle penalty
-  return dis <= 3 ? 2 : 0;
+  return dis <= 2 ? 3 : 0;
 }
 
 // state check
@@ -241,13 +241,13 @@ bool HybridAStarSearchMap::CollisionDection(double x, double y, double phi) {
     return false;
   }
 
-  if (GetObstacleDistance(x + dx, y + dy) <= VEHICLE_W) {
+  if (GetObstacleDistance(x + dx, y + dy) <= VEHICLE_L * 2) {
     // std::cout << " head failure:" << GetObstacleDistance(x + dx, y + dy)
     //           << std::endl;
     return false;
   }
 
-  if (GetObstacleDistance(x - dx, y - dy) <= VEHICLE_W) {
+  if (GetObstacleDistance(x - dx, y - dy) <= VEHICLE_L * 2) {
     // std::cout << " tail failure:" << GetObstacleDistance(x - dx, y - dy)
     //           << std::endl;
     return false;
@@ -278,9 +278,15 @@ void HybridAStarSearchMap::PlotTrajectory() {
   std::shared_ptr<Node3d> node = final_node_;
   while (node != nullptr) {
     marker.id = marker_id;
-    marker.color.r = 1.0f;
-    marker.color.g = 0.0f;
-    marker.color.b = 0.0f;
+    if (node->GetDirection()) {
+      marker.color.r = 1.0f;
+      marker.color.b = 0.0f;
+      marker.color.g = 0.0f;
+    } else {
+      marker.color.r = 0.0f;
+      marker.color.b = 1.0f;
+      marker.color.g = 0.0f;
+    }
     marker.color.a = 0.5f;
     marker.pose.position.x = node->GetX();
     marker.pose.position.y = node->GetY();
@@ -302,7 +308,7 @@ bool HybridAStarSearchMap::IsTerminateState(std::shared_ptr<Node3d> node) {
   double y_diff = end_node_->GetY() - node->GetY();
   double phi_diff = end_node_->GetPhi() - node->GetPhi();
   return std::sqrt(x_diff * x_diff + y_diff * y_diff) < xy_grid_resolution_ &&
-         std::abs(phi_diff) < phi_grid_resolution_;
+         (std::abs(phi_diff) < phi_grid_resolution_ || std::abs(std::abs(phi_diff) - M_PI) < phi_grid_resolution_);
 }
 
 void HybridAStarSearchMap::Update(double& x, double& y, double& phi,
@@ -320,6 +326,7 @@ void HybridAStarSearchMap::NextNodeGenerator(
     double last_x = cur_node->GetX();
     double last_y = cur_node->GetY();
     double last_phi = cur_node->GetPhi();
+    bool forward = step_size > 0;
     bool flag = true;
 
     for (int i = 0; i <= xy_grid_resolution_ * 1.5 / std::abs(step_size); i++) {
@@ -343,14 +350,17 @@ void HybridAStarSearchMap::NextNodeGenerator(
       if (p == nullptr) {
         p = CreateNodeFromWorldCoord(last_x, last_y, last_phi);
       }
+      
       int obstacle_distance = GetObstacleDistance(p);
+      double movement = forward ? FORWARD_PENALTY : BACKWARD_PENALTY;
+
       double path_cost =
-          cur_node->GetPathCost() + MOVEMENT_PENALTY +
-          ObstacleDistancePenalty(obstacle_distance) +
-          std::abs(steer) * STEER_PENALTY +
+          cur_node->GetPathCost() + ObstacleDistancePenalty(obstacle_distance) +
+          movement + std::abs(steer) * STEER_PENALTY +
           std::abs(steer - cur_node->GetSteer()) * STEER_CHANGE_PENALTY;
 
       if (p->GetPathCost() > path_cost) {
+        p->SetDirection(forward);
         p->SetSteer(steer);
         p->SetHeuristicCost(grid_map_.GetHeuristic(p->Cal2dIndex()));
         p->SetPathCost(path_cost);

@@ -42,5 +42,5 @@ class Node2d : public Node {
 
  private:
   double destination_cost_ = std::numeric_limits<double>::max();
-  double obstacle_distance_ = std::numeric_limits<double>::max();
+  double obstacle_distance_ = 0;
 };
