@@ -12,6 +12,9 @@ class ObstacleAnalyzer {
     search_map->SetBounds(-10, 10, -10, 10);
     search_map->SetXYResolution(0.3);
     search_map->SetPhiResolution(0.2);
+
+    sub_ = nh_.subscribe("/obstacles", 1, &ObstacleAnalyzer::ObstacleHandler,
+                         this);
   }
 
   void ObstacleHandler(costmap_converter::ObstacleArrayMsgConstPtr msg_ptr) {
@@ -55,8 +58,9 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
 
   // HybridAStarConf hybrid_Astar_conf;
-  // std::string hybrid_astar_conf_path = "planner/proto/hybrid_Astar_conf.proto";
-  // if (!hydra::hydrautils::proto::GetProtoFromASCIIFile(hybrid_astar_conf_path,
+  // std::string hybrid_astar_conf_path =
+  // "planner/proto/hybrid_Astar_conf.proto"; if
+  // (!hydra::hydrautils::proto::GetProtoFromASCIIFile(hybrid_astar_conf_path,
   //                                                      &hybrid_Astar_conf)) {
   //   std::cout << "fail to read proto files" << std::endl;
   // }
