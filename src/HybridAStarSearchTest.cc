@@ -9,9 +9,9 @@ class ObstacleAnalyzer {
   ObstacleAnalyzer() = default;
   void Init() {
     search_map = std::make_shared<HybridAStarSearchMap>();
-    search_map->SetBounds(-10, 10, -10, 10);
     search_map->SetXYResolution(0.3);
     search_map->SetPhiResolution(0.2);
+    search_map->SetBounds(-10, 10, -10, 10);
 
     sub_ = nh_.subscribe("/obstacles", 1, &ObstacleAnalyzer::ObstacleHandler,
                          this);
@@ -19,14 +19,13 @@ class ObstacleAnalyzer {
 
   void ObstacleHandler(costmap_converter::ObstacleArrayMsgConstPtr msg_ptr) {
     search_map->Reset();
-
     ros::Time start = ros::Time::now();
     for (costmap_converter::ObstacleMsg ob : msg_ptr->obstacles) {
       search_map->AddObstacles(ob.polygon);
     }
 
     search_map->SetStartPoint(0, 0, 0);
-    search_map->SetEndPoint(9, 9, 0);
+    search_map->SetEndPoint(9, 0, 0);
     if (!search_map->CheckStartEndPoints()) {
       ROS_ERROR("start/end points invalid!");
       return;

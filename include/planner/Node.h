@@ -14,10 +14,8 @@
 
 class Node {
  public:
-  double GetGridX() const { return grid_x_; }
-  double GetGridY() const { return grid_y_; }
-  double GetX() const { return x_; }
-  double GetY() const { return y_; }
+  int GetGridX() const { return grid_x_; }
+  int GetGridY() const { return grid_y_; }
 
   const std::string& GetIndex() const { return index_; }
 
@@ -32,8 +30,6 @@ class Node {
  protected:
   int grid_x_ = 0;
   int grid_y_ = 0;
-  double x_ = 0;
-  double y_ = 0;
   std::string index_;
   bool unavailable_ = false;
 };

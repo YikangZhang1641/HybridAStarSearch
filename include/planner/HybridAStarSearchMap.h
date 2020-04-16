@@ -12,8 +12,6 @@ class HybridAStarSearchMap {
   std::shared_ptr<Node3d> CreateNodeFromWorldCoord(const double x,
                                                    const double y,
                                                    const double phi);
-  std::shared_ptr<Node3d> CreateNodeFromGridCoord(const int x, const int y,
-                                                  const int phi);
   std::shared_ptr<Node3d> GetNodeFromWorldCoord(const double x, const double y,
                                                 const double phi);
   std::shared_ptr<Node3d> GetNodeFromGridCoord(const int x, const int y,
@@ -22,6 +20,7 @@ class HybridAStarSearchMap {
   std::string Calc2dIndex(const int grid_x, const int grid_y);
   std::string Calc3dIndex(const int grid_x, const int grid_y,
                           const int grid_phi);
+  std::string Calc3dIndex(double x, double y, double phi);
 
   // initialization
   void SetXYResolution(double resolution);
@@ -36,63 +35,56 @@ class HybridAStarSearchMap {
   void AddObstacles(geometry_msgs::Polygon p);
   void GenerateHeuristicMap();
   void Search();
+  double GetObstacleDistance(std::shared_ptr<Node3d> p);
+  double GetObstacleDistance(double x, double y);
+  double ObstacleDistancePenalty(double dis);
 
   // state check
-  bool InsideWorldMap(double x, double y);
+  bool InsideGridMap(const int node_grid_x, const int node_grid_y);
+  bool InsideWorldMap(const double x, const double y);
   bool CollisionDection(double x, double y, double phi);
 
   // plot
   void PlotHeuristicMap();
   void PlotTrajectory();
-  double ObsCostMapping(double dis) {
-    if (dis <= 3) {
-      return 2;
-    }
-    return 0;
-  }
-
-  double GetObstacleDistance(std::shared_ptr<Node3d> p) {
-    return grid_map_.GetNodeFromGridCoord(p->GetGridX(), p->GetGridY())
-        ->GetObstacleDistance();
-  }
-
-  double GetObstacleDistance(double x, double y) {
-    return grid_map_.GetNodeFromWorldCoord(x, y)->GetObstacleDistance();
-  }
 
  private:
-  GridMap grid_map_;
+  // node expansion
   bool IsTerminateState(std::shared_ptr<Node3d> node);
+  void Update(double& x, double& y, double& phi, double steer, double dis);
   void NextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& next_nodes,
                          std::shared_ptr<Node3d>, double step_size);
-  void Update(double& x, double& y, double& phi, double steer, double dis);
 
-  double step_size_ = 0.02;
+  // heuristic map and search map
+  GridMap grid_map_;
   std::unordered_map<std::string, std::shared_ptr<Node3d>> map_3d_;
   std::shared_ptr<Node3d> start_node_ = nullptr;
   std::shared_ptr<Node3d> end_node_ = nullptr;
   std::shared_ptr<Node3d> final_node_ = nullptr;
-  std::vector<double> XYbounds_{0, 10, 0, 10};
 
+  // map params
+  std::vector<double> XYbounds_{0, 10, 0, 10};
+  double max_grid_x_ = 0.0;
+  double max_grid_y_ = 0.0;
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
 
-
-  visualization_msgs::MarkerArray marker_array;
-  visualization_msgs::Marker marker;
-  
+  // visualization
   ros::NodeHandle nh;
   ros::Publisher pub;
+  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::Marker marker;
 
-  double max_cost = std::numeric_limits<double>::min();  
+  double max_cost = std::numeric_limits<double>::min();
 
+  // params nees to be set manually
   int next_node_num_ = 5;
+  double step_size_ = 0.02;
   double MAX_STEER = 0.8;
   double WHEEL_BASE = 2.0;
   double MOVEMENT_PENALTY = 2;
   double STEER_PENALTY = 0.5;
   double STEER_CHANGE_PENALTY = 1;
-
   double VEHICLE_L = 2.0;
   double VEHICLE_W = 1.0;
 

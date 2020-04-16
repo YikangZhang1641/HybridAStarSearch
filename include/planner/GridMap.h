@@ -29,18 +29,18 @@ class GridMap {
   };
   ~GridMap() = default;
 
-  // configuration
-  bool SetXYResolution(double resolution);
-  bool SetPhiResolution(double resolution);
-  bool SetStartPoint(double x, double y);
-  bool SetEndPoint(double x, double y);
-  bool SetBounds(double xmin, double xmax, double ymin, double ymax);
-
   // node generation
   std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
   std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
   std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
   std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
+
+  // map configuration
+  bool SetXYResolution(double resolution);
+  bool SetPhiResolution(double resolution);
+  bool SetStartPoint(double x, double y);
+  bool SetEndPoint(double x, double y);
+  bool SetBounds(double xmin, double xmax, double ymin, double ymax);
 
   // add obstacles into the map
   void AddPolygonObstacles(geometry_msgs::Polygon p);
@@ -59,29 +59,34 @@ class GridMap {
   void PlotObstacleMap(double xy_grid_resolution);
 
  private:
+  // expansion
   std::vector<std::shared_ptr<Node2d>> GenerateNextNodes(
       std::shared_ptr<Node2d> node);
-  bool InsideMapRange(const int node_grid_x, const int node_grid_y);
+  bool InsideGridMap(const int node_grid_x, const int node_grid_y);
+  bool InsideWorldMap(const double x, const double y);
 
+  // map settings
   std::unordered_map<std::string, std::shared_ptr<Node2d>> map_2d_;
   std::shared_ptr<Node2d> start_node_ = nullptr;
   std::shared_ptr<Node2d> end_node_ = nullptr;
-  std::vector<double> XYbounds_{-10, 10, -10, 10};
 
+  std::vector<double> XYbounds_{-10, 10, -10, 10};
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
+
   double max_grid_x_ = 0.0;
   double max_grid_y_ = 0.0;
 
+  ros::NodeHandle nh;
+  ros::Publisher pub_map, pub_border, pub_obstacle;
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;
 
-  ros::NodeHandle nh;
-  ros::Publisher pub_map, pub_border, pub_obstacle;
-
-  double max_cost = std::numeric_limits<double>::min();
+  // obstacle borders
   std::set<std::string> border_available_;
   std::set<std::string> border_unavailable_;
+  
+  double max_cost = std::numeric_limits<double>::min();
 };
 }  // namespace planning
 }  // namespace udrive
