@@ -61,6 +61,10 @@
     "random": "cpp",
     "set": "cpp",
     "string": "cpp",
-    "queue": "cpp"
+    "queue": "cpp",
+    "*.inc": "cpp",
+    "hash_map": "cpp",
+    "hash_set": "cpp",
+    "unordered_set": "cpp"
   }
 }

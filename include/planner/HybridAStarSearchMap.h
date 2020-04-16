@@ -25,11 +25,12 @@ class HybridAStarSearchMap {
 
   // initialization
   void SetXYResolution(double resolution);
+  void SetPhiResolution(double resolution);
   bool SetStartPoint(double x, double y, double phi);
   bool SetEndPoint(double x, double y, double phi);
   void SetBounds(double xmin, double xmax, double ymin, double ymax);
   bool CheckStartEndPoints();
-  void ClearMap();
+  void Reset();
 
   // search
   void AddObstacles(geometry_msgs::Polygon p);
@@ -68,21 +69,22 @@ class HybridAStarSearchMap {
 
   double step_size_ = 0.02;
   std::unordered_map<std::string, std::shared_ptr<Node3d>> map_3d_;
-
   std::shared_ptr<Node3d> start_node_ = nullptr;
   std::shared_ptr<Node3d> end_node_ = nullptr;
   std::shared_ptr<Node3d> final_node_ = nullptr;
   std::vector<double> XYbounds_{0, 10, 0, 10};
 
-  ros::NodeHandle nh;
-  ros::Publisher pub;
+  double xy_grid_resolution_ = 0.3;
+  double phi_grid_resolution_ = 0.2;
+
 
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;
-  double max_cost = std::numeric_limits<double>::min();
+  
+  ros::NodeHandle nh;
+  ros::Publisher pub;
 
-  double xy_grid_resolution_ = 0.3;
-  double phi_grid_resolution_ = 0.2;
+  double max_cost = std::numeric_limits<double>::min();  
 
   int next_node_num_ = 5;
   double MAX_STEER = 0.8;

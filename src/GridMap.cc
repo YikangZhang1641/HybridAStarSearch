@@ -61,6 +61,10 @@ bool GridMap::SetXYResolution(double resolution) {
   xy_grid_resolution_ = resolution;
 }
 
+bool GridMap::SetPhiResolution(double resolution) {
+  phi_grid_resolution_ = resolution;
+}
+
 bool GridMap::InsideMapRange(const int node_grid_x, const int node_grid_y) {
   if (node_grid_x > max_grid_x_ || node_grid_x < 0 ||
       node_grid_y > max_grid_y_ || node_grid_y < 0) {
@@ -174,7 +178,6 @@ bool GridMap::GenerateObstacleDistanceMap() {
   }
   std::cout << "Obstacle Map generated successfully! visited size: "
             << visited.size() << std::endl;
-  // to do: use the border to find dist map (the cloest obstacle for each node)
 }
 
 bool GridMap::GenerateDestinationDistanceMap() {
@@ -403,9 +406,10 @@ double GridMap::GetHeuristic(std::string s) {
   return map_2d_[s]->GetCost();
 }
 
-void GridMap::ClearMap() {
+void GridMap::Reset() {
   map_2d_.clear();
   border_available_.clear();
+  border_unavailable_.clear();
 }
 }  // namespace planning
 }  // namespace udrive

@@ -54,6 +54,11 @@ void HybridAStarSearchMap::SetXYResolution(double resolution) {
   xy_grid_resolution_ = resolution;
 }
 
+void HybridAStarSearchMap::SetPhiResolution(double resolution) {
+  grid_map_.SetPhiResolution(resolution);
+  phi_grid_resolution_ = resolution;
+}
+
 bool HybridAStarSearchMap::SetStartPoint(double x, double y, double phi) {
   grid_map_.SetStartPoint(x, y);
   start_node_ = CreateNodeFromWorldCoord(x, y, phi);
@@ -128,8 +133,8 @@ bool HybridAStarSearchMap::CollisionDection(double x, double y, double phi) {
   return true;
 }
 
-void HybridAStarSearchMap::ClearMap() {
-  grid_map_.ClearMap();
+void HybridAStarSearchMap::Reset() {
+  grid_map_.Reset();
   map_3d_.clear();
   count = 0;
 }

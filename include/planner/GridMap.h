@@ -11,7 +11,6 @@
 #include <set>
 #include <vector>
 
-#include "hydra_utils/hydra_utils/proto/proto_file_utils_lib.hpp"
 #include "planner/Node2d.h"
 #include "planner/Node3d.h"
 
@@ -32,11 +31,12 @@ class GridMap {
 
   // configuration
   bool SetXYResolution(double resolution);
+  bool SetPhiResolution(double resolution);
   bool SetStartPoint(double x, double y);
   bool SetEndPoint(double x, double y);
   bool SetBounds(double xmin, double xmax, double ymin, double ymax);
 
-  // node
+  // node generation
   std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
   std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
   std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
@@ -48,7 +48,7 @@ class GridMap {
   // heuristic map & obstacle map
   bool GenerateDestinationDistanceMap();
   bool GenerateObstacleDistanceMap();
-  void ClearMap();
+  void Reset();
 
   // get the 2d heuristic value
   double GetHeuristic(std::string s);
@@ -64,17 +64,14 @@ class GridMap {
   bool InsideMapRange(const int node_grid_x, const int node_grid_y);
 
   std::unordered_map<std::string, std::shared_ptr<Node2d>> map_2d_;
+  std::shared_ptr<Node2d> start_node_ = nullptr;
+  std::shared_ptr<Node2d> end_node_ = nullptr;
+  std::vector<double> XYbounds_{-10, 10, -10, 10};
 
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
-  double node_radius_ = 0.0;
-  std::vector<double> XYbounds_{0, 10, 0, 10};
   double max_grid_x_ = 0.0;
   double max_grid_y_ = 0.0;
-  std::shared_ptr<Node2d> start_node_ = nullptr;
-  std::shared_ptr<Node2d> end_node_ = nullptr;
-
-  std::vector<std::vector<int>> grid_obstacles_;
 
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;

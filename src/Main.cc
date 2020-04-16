@@ -1,4 +1,7 @@
+// #include "hydra_utils/hydra_utils/proto/proto_file_utils_lib.hpp"
 #include "planner/HybridAStarSearchMap.h"
+// #include "planner/proto/hybrid_Astar_conf.pb.h"
+
 using namespace udrive::planning;
 
 class ObstacleAnalyzer {
@@ -6,14 +9,13 @@ class ObstacleAnalyzer {
   ObstacleAnalyzer() = default;
   void Init() {
     search_map = std::make_shared<HybridAStarSearchMap>();
-    search_map->SetBounds(-5, 5, -5, 5);
-
-    sub_ = nh_.subscribe("/obstacles", 1, &ObstacleAnalyzer::ObstacleHandler,
-                         this);
+    search_map->SetBounds(-10, 10, -10, 10);
+    search_map->SetXYResolution(0.3);
+    search_map->SetPhiResolution(0.2);
   }
 
   void ObstacleHandler(costmap_converter::ObstacleArrayMsgConstPtr msg_ptr) {
-    search_map->ClearMap();
+    search_map->Reset();
 
     ros::Time start = ros::Time::now();
     for (costmap_converter::ObstacleMsg ob : msg_ptr->obstacles) {
@@ -21,7 +23,7 @@ class ObstacleAnalyzer {
     }
 
     search_map->SetStartPoint(0, 0, 0);
-    search_map->SetEndPoint(2, 4, 0) ;
+    search_map->SetEndPoint(9, 9, 0);
     if (!search_map->CheckStartEndPoints()) {
       ROS_ERROR("start/end points invalid!");
       return;
@@ -52,7 +54,12 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "Astar");
   ros::NodeHandle nh;
 
-  
+  // HybridAStarConf hybrid_Astar_conf;
+  // std::string hybrid_astar_conf_path = "planner/proto/hybrid_Astar_conf.proto";
+  // if (!hydra::hydrautils::proto::GetProtoFromASCIIFile(hybrid_astar_conf_path,
+  //                                                      &hybrid_Astar_conf)) {
+  //   std::cout << "fail to read proto files" << std::endl;
+  // }
 
   ObstacleAnalyzer obstacle_analyzer;
   obstacle_analyzer.Init();

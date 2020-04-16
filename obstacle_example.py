@@ -5,8 +5,8 @@ import rospy
 
 def pt(x, y):
   p = Point32()
-  p.x = x / 2.0
-  p.y = y / 2.0
+  p.x = x 
+  p.y = y 
   p.z = 0 
   return p
 
@@ -26,9 +26,9 @@ ob2.polygon.points = [pt(7,1), pt(8,5), pt(8,1)]
 
 ob3 = ObstacleMsg()
 ob3.header.frame_id = "map"
-ob3.polygon.points = []
-ob3.polygon.points = []
-# pt(0,5), pt(0,10), pt(2,10), pt(2, 5)
+# ob3.polygon.points = []
+ob3.polygon.points = [pt(0,5), pt(0,10), pt(2,10), pt(2, 5)]
+
 msg.header.frame_id = "map"
 msg.obstacles = [ob1, ob2, ob3]
 
