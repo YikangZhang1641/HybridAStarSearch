@@ -31,24 +31,13 @@ std::shared_ptr<Node3d> HybridAStarSearchMap::GetNodeFromGridCoord(
     return nullptr;
   }
 
-  std::string name = Calc3dIndex(grid_x, grid_y, grid_phi);
+  std::string name = Node::ComputeStringIndex(grid_x, grid_y, grid_phi);
   if (map_3d_.find(name) == map_3d_.end()) {
     return nullptr;
   }
   return map_3d_[name];
 }
 
-std::string HybridAStarSearchMap::Calc2dIndex(const int grid_x,
-                                              const int grid_y) {
-  return std::to_string(grid_x) + "_" + std::to_string(grid_y);
-}
-
-std::string HybridAStarSearchMap::Calc3dIndex(const int grid_x,
-                                              const int grid_y,
-                                              const int grid_phi) {
-  return std::to_string(grid_x) + "_" + std::to_string(grid_y) + "_" +
-         std::to_string(grid_phi);
-}
 
 std::string HybridAStarSearchMap::Calc3dIndex(double x, double y, double phi) {
   while (phi > M_PI) {
@@ -60,7 +49,7 @@ std::string HybridAStarSearchMap::Calc3dIndex(double x, double y, double phi) {
   int grid_x = static_cast<int>((x - XYbounds_[0]) / xy_grid_resolution_);
   int grid_y = static_cast<int>((y - XYbounds_[2]) / xy_grid_resolution_);
   int grid_phi = static_cast<int>((phi + M_PI) / phi_grid_resolution_);
-  return Calc3dIndex(grid_x, grid_y, grid_phi);
+  return Node::ComputeStringIndex(grid_x, grid_y, grid_phi);
 }
 
 // initialization

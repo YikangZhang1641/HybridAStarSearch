@@ -77,6 +77,7 @@ class GridMap {
   double max_grid_x_ = 0.0;
   double max_grid_y_ = 0.0;
 
+  // visualization
   ros::NodeHandle nh;
   ros::Publisher pub_map, pub_border, pub_obstacle;
   visualization_msgs::MarkerArray marker_array;

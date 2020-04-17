@@ -16,10 +16,6 @@ class HybridAStarSearchMap {
                                                 const double phi);
   std::shared_ptr<Node3d> GetNodeFromGridCoord(const int x, const int y,
                                                const int phi);
-
-  std::string Calc2dIndex(const int grid_x, const int grid_y);
-  std::string Calc3dIndex(const int grid_x, const int grid_y,
-                          const int grid_phi);
   std::string Calc3dIndex(double x, double y, double phi);
 
   // initialization
@@ -66,8 +62,6 @@ class HybridAStarSearchMap {
   std::vector<double> XYbounds_{0, 10, 0, 10};
   int max_grid_x_ = 0;
   int max_grid_y_ = 0;
-  double xy_grid_resolution_ = 0.3;
-  double phi_grid_resolution_ = 0.2;
 
   // visualization
   ros::NodeHandle nh;
@@ -75,9 +69,9 @@ class HybridAStarSearchMap {
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;
 
-  double max_cost = std::numeric_limits<double>::min();
-
   // params nees to be set manually
+  double xy_grid_resolution_ = 0.3;
+  double phi_grid_resolution_ = 0.2;
   int next_node_num_ = 5;
   double step_size_ = 0.02;
   double MAX_STEER = 0.8;
@@ -91,6 +85,8 @@ class HybridAStarSearchMap {
   double STEER_PENALTY = 1;
   double STEER_CHANGE_PENALTY = 1;
 
+  // counter
+  double max_cost = std::numeric_limits<double>::min();
   int count = 0;
 };
 }  // namespace planning
