@@ -1,28 +1,32 @@
 #include "planner/GridMap.h"
 
-namespace udrive {
-namespace planning {
-
 // node generation
-std::shared_ptr<Node2d> GridMap::CreateNodeFromWorldCoord(double x, double y) {
-  return std::make_shared<Node2d>(x, y, xy_grid_resolution_, XYbounds_);
+std::shared_ptr<Node2d> GridMap::CreateNodeFromWorldCoord(const double x,
+                                                          const double y) {
+  auto node = std::make_shared<Node2d>(x, y, xy_grid_resolution_, XYbounds_);
+  map_2d_[node->GetIndex()] = node;
+  return node;
 }
 
-std::shared_ptr<Node2d> GridMap::CreateNodeFromGridCoord(int x_grid,
-                                                         int y_grid) {
-  return std::make_shared<Node2d>(x_grid, y_grid, XYbounds_);
+std::shared_ptr<Node2d> GridMap::CreateNodeFromGridCoord(const int x_grid,
+                                                         const int y_grid) {
+  auto node = std::make_shared<Node2d>(x_grid, y_grid, XYbounds_);
+  map_2d_[node->GetIndex()] = node;
+  return node;
 }
 
-std::shared_ptr<Node2d> GridMap::GetNodeFromWorldCoord(double x, double y) {
+std::shared_ptr<Node2d> GridMap::GetNodeFromWorldCoord(const double x,
+                                                       const double y) {
   int x_grid = static_cast<int>((x - XYbounds_[0]) / xy_grid_resolution_);
   int y_grid = static_cast<int>((y - XYbounds_[2]) / xy_grid_resolution_);
   return GetNodeFromGridCoord(x_grid, y_grid);
 }
 
-std::shared_ptr<Node2d> GridMap::GetNodeFromGridCoord(int x_grid, int y_grid) {
+std::shared_ptr<Node2d> GridMap::GetNodeFromGridCoord(const int x_grid,
+                                                      const int y_grid) {
   std::string name = std::to_string(x_grid) + "_" + std::to_string(y_grid);
   if (map_2d_.find(name) == map_2d_.end()) {
-    map_2d_[name] = CreateNodeFromGridCoord(x_grid, y_grid);
+    return nullptr;
   }
   return map_2d_[name];
 }
@@ -68,7 +72,8 @@ bool GridMap::SetBounds(double xmin, double xmax, double ymin, double ymax) {
 }
 
 // add obstacles into the map
-void GridMap::AddPolygonObstacles(geometry_msgs::Polygon p) {
+void GridMap::AddPolygonObstacles(geometry_msgs::Polygon p,
+                                  double LIDAR_TO_REAR) {
   if (p.points.empty()) {
     ROS_INFO("Polygon Obstacle empty!");
     return;
@@ -89,9 +94,9 @@ void GridMap::AddPolygonObstacles(geometry_msgs::Polygon p) {
   vec_end_y.emplace_back((double)p.points[0].y);
 
   for (int i = 0; i < size; i++) {
-    double start_x = vec_start_x[i];
+    double start_x = vec_start_x[i] + LIDAR_TO_REAR;
     double start_y = vec_start_y[i];
-    double end_x = vec_end_x[i];
+    double end_x = vec_end_x[i] + LIDAR_TO_REAR;
     double end_y = vec_end_y[i];
 
     // DDA
@@ -106,6 +111,9 @@ void GridMap::AddPolygonObstacles(geometry_msgs::Polygon p) {
     double x = start_x, y = start_y;
     for (int i = 0; i <= length; ++i) {
       std::shared_ptr<Node2d> grid_p = GetNodeFromWorldCoord(x, y);
+      if (grid_p == nullptr) {
+        grid_p = CreateNodeFromWorldCoord(x, y);
+      }
       grid_p->SetUnavailable();
       grid_p->SetObstacleDistance(0);
       border_unavailable_.emplace(grid_p->GetIndex());
@@ -175,7 +183,9 @@ bool GridMap::GenerateObstacleDistanceMap() {
       pq;
   std::set<std::string> visited;
   for (std::string node_name : border_available_) {
-    pq.push(map_2d_[node_name]);
+    auto node = map_2d_[node_name];
+    node->SetObstacleDistance(1);
+    pq.push(node);
   }
 
   // for available region
@@ -205,7 +215,10 @@ bool GridMap::GenerateObstacleDistanceMap() {
         continue;
       }
 
-      next_node->SetObstacleDistance(cur_node->GetObstacleDistance() + 1.0);
+      if (next_node->GetObstacleDistance() >
+          cur_node->GetObstacleDistance() + 1) {
+        next_node->SetObstacleDistance(cur_node->GetObstacleDistance() + 1);
+      }
       pq.emplace(next_node);
     }
   }
@@ -232,7 +245,11 @@ bool GridMap::GenerateObstacleDistanceMap() {
       if (!InsideGridMap(nx, ny)) {
         continue;
       }
+
       auto next_node = GetNodeFromGridCoord(nx, ny);
+      if (next_node == nullptr) {
+        next_node = CreateNodeFromGridCoord(nx, ny);
+      }
       dq.emplace_front(next_node);
     }
   }
@@ -258,7 +275,7 @@ double GridMap::GetHeuristic(std::string s) {
 // plot
 void GridMap::PlotHeuristicMap(double xy_grid_resolution) {
   marker_array.markers.clear();
-  marker.header.frame_id = "map";
+  marker.header.frame_id = "base_link";
   marker.header.stamp = ros::Time::now();
   marker.ns = "";
 
@@ -296,7 +313,7 @@ void GridMap::PlotHeuristicMap(double xy_grid_resolution) {
 
 void GridMap::PlotBorders(double xy_grid_resolution) {
   marker_array.markers.clear();
-  marker.header.frame_id = "map";
+  marker.header.frame_id = "base_link";
   marker.header.stamp = ros::Time::now();
   marker.ns = "";
 
@@ -333,7 +350,7 @@ void GridMap::PlotBorders(double xy_grid_resolution) {
 
 void GridMap::PlotObstacleMap(double xy_grid_resolution) {
   marker_array.markers.clear();
-  marker.header.frame_id = "map";
+  marker.header.frame_id = "base_link";
   marker.header.stamp = ros::Time::now();
   marker.ns = "";
 
@@ -349,7 +366,8 @@ void GridMap::PlotObstacleMap(double xy_grid_resolution) {
     auto node = iter->second;
     marker.id = marker_id;
     marker.color.r = 0.0f;
-    marker.color.g = 1.0f - node->GetObstacleDistance() / 10;
+    marker.color.g =
+        1.0f - (double)node->GetObstacleDistance() * xy_grid_resolution_ / 10.0;
     marker.color.b = 0.0f;
     marker.color.a = 0.2;
 
@@ -390,6 +408,9 @@ std::vector<std::shared_ptr<Node2d>> GridMap::GenerateNextNodes(
       continue;
     }
     std::shared_ptr<Node2d> next = GetNodeFromGridCoord(next_x, next_y);
+    if (next == nullptr) {
+      next = CreateNodeFromGridCoord(next_x, next_y);
+    }
     if (next->GetDestinationCost() > next_node_path_cost) {
       next->SetDestinationCost(next_node_path_cost);
     }
@@ -414,5 +435,3 @@ bool GridMap::InsideWorldMap(const double x, const double y) {
   }
   return true;
 }
-}  // namespace planning
-}  // namespace udrive

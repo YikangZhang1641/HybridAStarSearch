@@ -27,10 +27,12 @@ class GridMap {
   ~GridMap() = default;
 
   // node generation
-  std::shared_ptr<Node2d> CreateNodeFromWorldCoord(double x, double y);
-  std::shared_ptr<Node2d> CreateNodeFromGridCoord(int x, int y);
-  std::shared_ptr<Node2d> GetNodeFromWorldCoord(double x, double y);
-  std::shared_ptr<Node2d> GetNodeFromGridCoord(int x_grid, int y_grid);
+  std::shared_ptr<Node2d> CreateNodeFromWorldCoord(const double x,
+                                                   const double y);
+  std::shared_ptr<Node2d> CreateNodeFromGridCoord(const int x, const int y);
+  std::shared_ptr<Node2d> GetNodeFromWorldCoord(const double x, const double y);
+  std::shared_ptr<Node2d> GetNodeFromGridCoord(const int x_grid,
+                                               const int y_grid);
 
   // map configuration
   bool SetXYResolution(double resolution);
@@ -40,7 +42,7 @@ class GridMap {
   bool SetBounds(double xmin, double xmax, double ymin, double ymax);
 
   // add obstacles into the map
-  void AddPolygonObstacles(geometry_msgs::Polygon p);
+  void AddPolygonObstacles(geometry_msgs::Polygon p, double LIDAR_TO_REAR);
 
   // heuristic map & obstacle map
   bool GenerateDestinationDistanceMap();
@@ -54,6 +56,7 @@ class GridMap {
   void PlotHeuristicMap(double xy_grid_resolution);
   void PlotBorders(double xy_grid_resolution);
   void PlotObstacleMap(double xy_grid_resolution);
+  std::unordered_map<std::string, std::shared_ptr<Node2d>> map_2d_;
 
  private:
   // for expansion
@@ -63,7 +66,6 @@ class GridMap {
   bool InsideWorldMap(const double x, const double y);
 
   // map settings
-  std::unordered_map<std::string, std::shared_ptr<Node2d>> map_2d_;
   std::shared_ptr<Node2d> start_node_ = nullptr;
   std::shared_ptr<Node2d> end_node_ = nullptr;
 
