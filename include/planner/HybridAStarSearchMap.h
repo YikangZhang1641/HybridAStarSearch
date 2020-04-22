@@ -1,13 +1,7 @@
 #include "planner/GridMap.h"
-
-namespace udrive {
-namespace planning {
-
 class HybridAStarSearchMap {
  public:
-  HybridAStarSearchMap() {
-    pub = nh.advertise<visualization_msgs::MarkerArray>("vis_map", 10);
-  }
+  explicit HybridAStarSearchMap(const std::string motion_planning_conf_path);
 
   std::shared_ptr<Node3d> CreateNodeFromWorldCoord(const double x,
                                                    const double y,
@@ -21,16 +15,19 @@ class HybridAStarSearchMap {
   // initialization
   void SetXYResolution(double resolution);
   void SetPhiResolution(double resolution);
+  void SetBounds(double xmin, double xmax, double ymin, double ymax);
   bool SetStartPoint(double x, double y, double phi);
   bool SetEndPoint(double x, double y, double phi);
-  void SetBounds(double xmin, double xmax, double ymin, double ymax);
   bool CheckStartEndPoints();
   void Reset();
 
   // search
   void AddObstacles(geometry_msgs::Polygon p);
-  void GenerateHeuristicMap();
-  void Search();
+  void AddObstacleArrayPtr(costmap_converter::ObstacleArrayMsgConstPtr ptr);
+  bool GenerateHeuristicMap();
+  bool Search();
+  std::vector<common::PathPoint> GetResult(
+      const udrive::common::VehicleState& vehicle);
   double GetObstacleDistance(std::shared_ptr<Node3d> p);
   double GetObstacleDistance(double x, double y);
   double ObstacleDistancePenalty(double dis);
@@ -42,6 +39,8 @@ class HybridAStarSearchMap {
 
   // plot
   void PlotHeuristicMap();
+  void PlotDebugMap();
+  void PlotCostMap();
   void PlotTrajectory();
 
  private:
@@ -59,35 +58,38 @@ class HybridAStarSearchMap {
   std::shared_ptr<Node3d> final_node_ = nullptr;
 
   // map params
-  std::vector<double> XYbounds_{0, 10, 0, 10};
+  std::vector<double> XYbounds_{-10, 10, -10, 10};
   int max_grid_x_ = 0;
   int max_grid_y_ = 0;
 
   // visualization
   ros::NodeHandle nh;
-  ros::Publisher pub;
+  ros::Publisher pub, pub_cost_map;
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;
 
   // params nees to be set manually
+  MotionPlanningConf motion_planning_conf_;
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
   int next_node_num_ = 5;
   double step_size_ = 0.02;
   double MAX_STEER = 0.8;
   double WHEEL_BASE = 2.0;
+  double LIDAR_TO_REAR = 1.0;
   double VEHICLE_L = 2.0;
   double VEHICLE_W = 1.0;
+  double WHEEL_BASE_TO_BACK = 0.7;
 
   // penalty
   double FORWARD_PENALTY = 1;
   double BACKWARD_PENALTY = 5;
   double STEER_PENALTY = 1;
   double STEER_CHANGE_PENALTY = 1;
+  double OBSTACLE_PENALTY = 3;
+  double SWITCH_PENALTY = 5.0;
 
   // counter
   double max_cost = std::numeric_limits<double>::min();
   int count = 0;
 };
-}  // namespace planning
-}  // namespace udrive
