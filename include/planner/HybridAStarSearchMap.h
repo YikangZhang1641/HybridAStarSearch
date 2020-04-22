@@ -26,8 +26,6 @@ class HybridAStarSearchMap {
   void AddObstacleArrayPtr(costmap_converter::ObstacleArrayMsgConstPtr ptr);
   bool GenerateHeuristicMap();
   bool Search();
-  std::vector<common::PathPoint> GetResult(
-      const udrive::common::VehicleState& vehicle);
   double GetObstacleDistance(std::shared_ptr<Node3d> p);
   double GetObstacleDistance(double x, double y);
   double ObstacleDistancePenalty(double dis);
@@ -69,7 +67,6 @@ class HybridAStarSearchMap {
   visualization_msgs::Marker marker;
 
   // params nees to be set manually
-  MotionPlanningConf motion_planning_conf_;
   double xy_grid_resolution_ = 0.3;
   double phi_grid_resolution_ = 0.2;
   int next_node_num_ = 5;

@@ -223,29 +223,6 @@ bool HybridAStarSearchMap::Search() {
   return false;
 }
 
-std::vector<common::PathPoint> HybridAStarSearchMap::GetResult(
-    const udrive::common::VehicleState& vehicle) {
-  double odom_x = vehicle.x();
-  double odom_y = vehicle.y();
-  double odom_theta = vehicle.heading();
-
-  std::vector<common::PathPoint> rst;
-  std::shared_ptr<Node3d> node = final_node_;
-  while (node != nullptr) {
-    common::PathPoint point;
-    point.set_x(odom_x + node->GetX() * std::cos(odom_theta) -
-                node->GetY() * std::sin(odom_theta));
-    point.set_y(odom_y + node->GetX() * std::sin(odom_theta) +
-                node->GetY() * std::cos(odom_theta));
-    point.set_theta(odom_theta + node->GetPhi());
-    point.set_direction(node->GetDirection() ? 1 : -1);
-    rst.emplace_back(point);
-    node = node->GetPreNode();
-  }
-  reverse(rst.begin(), rst.end());
-  return rst;
-}
-
 double HybridAStarSearchMap::GetObstacleDistance(std::shared_ptr<Node3d> p) {
   return GetObstacleDistance(p->GetGridX(), p->GetGridY());
 }
