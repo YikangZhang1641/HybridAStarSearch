@@ -14,9 +14,6 @@
 #include "planner/Node2d.h"
 #include "planner/Node3d.h"
 
-namespace udrive {
-namespace planning {
-
 class GridMap {
  public:
   GridMap() {
@@ -89,5 +86,3 @@ class GridMap {
 
   double max_cost = std::numeric_limits<double>::min();
 };
-}  // namespace planning
-}  // namespace udrive

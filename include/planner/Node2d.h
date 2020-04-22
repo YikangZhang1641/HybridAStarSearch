@@ -21,7 +21,7 @@ class Node2d : public Node {
   void SetDestinationCost(const double dest_cost) {
     destination_cost_ = dest_cost;
   }
-  void SetObstacleDistance(const double dis) { obstacle_distance_ = dis; }
+  void SetObstacleDistance(const int dis) { obstacle_distance_ = dis; }
 
   double GetDestinationCost() const { return destination_cost_; }
   double GetObstacleDistance() const { return obstacle_distance_; }
@@ -39,8 +39,10 @@ class Node2d : public Node {
   bool operator==(const Node2d& right) const {
     return right.GetIndex() == index_;
   }
+  int expanded = 0;
+  double debug_cost = std::numeric_limits<double>::max();
 
  private:
   double destination_cost_ = std::numeric_limits<double>::max();
-  double obstacle_distance_ = 0;
+  int obstacle_distance_ = std::numeric_limits<int>::max();
 };
