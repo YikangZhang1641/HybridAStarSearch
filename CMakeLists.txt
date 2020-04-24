@@ -34,8 +34,5 @@ target_link_libraries(RSPathTest
   ${catkin_LIBRARIES}
 )
 
-find_package(GTest REQUIRED)
-enable_testing()
-
 include_directories(${GTEST_INCLUDE_DIR})
 
