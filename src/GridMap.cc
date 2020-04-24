@@ -324,8 +324,8 @@ void GridMap::PlotBorders(double xy_grid_resolution) {
   int marker_id = 0;
 
   std::set<std::string, std::shared_ptr<Node2d>>::iterator iter =
-      border_available_.begin();
-  while (iter != border_available_.end()) {
+      border_unavailable_.begin();
+  while (iter != border_unavailable_.end()) {
     std::shared_ptr<Node2d> node = map_2d_[*iter];
     marker.id = marker_id;
     marker.color.r = 0.0;
