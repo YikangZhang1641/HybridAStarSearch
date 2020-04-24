@@ -7,9 +7,9 @@ class ObstacleAnalyzer {
     search_map = std::make_shared<HybridAStarSearchMap>(
         "/home/ubuntu/catkin_ws/src/motion_planning/conf/"
         "motion_planning.pb.conf.sample");
-    // search_map->SetXYResolution(0.3);
-    // search_map->SetPhiResolution(0.2);
-    // search_map->SetBounds(-10, 10, -10, 10);
+    search_map->SetXYResolution(0.3);
+    search_map->SetPhiResolution(0.2);
+    search_map->SetBounds(-10, 10, -10, 10);
 
     sub_obstacle_ = nh_.subscribe("/obstacles", 1,
                                   &ObstacleAnalyzer::ObstacleHandler, this);

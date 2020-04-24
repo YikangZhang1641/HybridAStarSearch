@@ -1,5 +1,5 @@
 #pragma once
-#include "planner/Node.h"
+#include "Node.h"
 
 class Node3d : public Node {
  public:
@@ -77,6 +77,7 @@ class Node3d : public Node {
   bool operator==(const Node3d& right) const {
     return right.GetIndex() == index_;
   }
+  int analysis_step = 0;
 
  private:
   double x_ = 0;

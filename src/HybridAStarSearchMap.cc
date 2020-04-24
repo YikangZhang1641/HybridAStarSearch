@@ -2,9 +2,14 @@
 
 HybridAStarSearchMap::HybridAStarSearchMap(
     const std::string motion_planning_conf_path) {
-  pub = nh.advertise<visualization_msgs::MarkerArray>("vis_trajectory", 10);
+  pub_trajectory =
+      nh.advertise<visualization_msgs::MarkerArray>("vis_trajectory", 10);
   pub_cost_map =
       nh.advertise<visualization_msgs::MarkerArray>("vis_cost_map", 10);
+
+  grid_map_ = std::make_shared<GridMap>();
+  reed_shepp_generator_ =
+      std::make_shared<ReedShepp>(max_kappa_, rs_step_size_);
 }
 
 std::shared_ptr<Node3d> HybridAStarSearchMap::CreateNodeFromWorldCoord(
@@ -57,7 +62,7 @@ std::string HybridAStarSearchMap::Calc3dIndex(double x, double y, double phi) {
 
 // initialization
 void HybridAStarSearchMap::SetXYResolution(double resolution) {
-  grid_map_.SetXYResolution(resolution);
+  grid_map_->SetXYResolution(resolution);
   xy_grid_resolution_ = resolution;
   max_grid_x_ =
       static_cast<int>((XYbounds_[1] - XYbounds_[0]) / xy_grid_resolution_) + 1;
@@ -66,7 +71,7 @@ void HybridAStarSearchMap::SetXYResolution(double resolution) {
 }
 
 void HybridAStarSearchMap::SetPhiResolution(double resolution) {
-  grid_map_.SetPhiResolution(resolution);
+  grid_map_->SetPhiResolution(resolution);
   phi_grid_resolution_ = resolution;
   max_grid_x_ =
       static_cast<int>((XYbounds_[1] - XYbounds_[0]) / xy_grid_resolution_) + 1;
@@ -76,7 +81,7 @@ void HybridAStarSearchMap::SetPhiResolution(double resolution) {
 
 void HybridAStarSearchMap::SetBounds(double xmin, double xmax, double ymin,
                                      double ymax) {
-  grid_map_.SetBounds(xmin, xmax, ymin, ymax);
+  grid_map_->SetBounds(xmin, xmax, ymin, ymax);
   if (!XYbounds_.empty()) {
     XYbounds_.clear();
   }
@@ -95,7 +100,7 @@ bool HybridAStarSearchMap::SetStartPoint(double x, double y, double phi) {
   if (!InsideWorldMap(x, y)) {
     return false;
   }
-  grid_map_.SetStartPoint(x, y);
+  grid_map_->SetStartPoint(x, y);
   start_node_ = CreateNodeFromWorldCoord(x, y, phi);
   start_node_->SetPathCost(0);
   return true;
@@ -105,7 +110,7 @@ bool HybridAStarSearchMap::SetEndPoint(double x, double y, double phi) {
   if (!InsideWorldMap(x, y)) {
     return false;
   }
-  grid_map_.SetEndPoint(x, y);
+  grid_map_->SetEndPoint(x, y);
   end_node_ = CreateNodeFromWorldCoord(x, y, phi);
   return true;
 }
@@ -116,8 +121,8 @@ bool HybridAStarSearchMap::CheckStartEndPoints() {
     return false;
   }
 
-  auto start =
-      grid_map_.GetNodeFromWorldCoord(start_node_->GetX(), start_node_->GetY());
+  auto start = grid_map_->GetNodeFromWorldCoord(start_node_->GetX(),
+                                                start_node_->GetY());
   if (start == nullptr || start->IsUnavailable()) {
     std::cout << "start point unavailable!" << std::endl;
     return false;
@@ -129,7 +134,7 @@ bool HybridAStarSearchMap::CheckStartEndPoints() {
   }
 
   auto end =
-      grid_map_.GetNodeFromWorldCoord(end_node_->GetX(), end_node_->GetY());
+      grid_map_->GetNodeFromWorldCoord(end_node_->GetX(), end_node_->GetY());
   if (end == nullptr || end->IsUnavailable()) {
     std::cout << "end point unavailable!" << std::endl;
     return false;
@@ -138,15 +143,16 @@ bool HybridAStarSearchMap::CheckStartEndPoints() {
 }
 
 void HybridAStarSearchMap::Reset() {
-  grid_map_.Reset();
+  grid_map_->Reset();
   map_3d_.clear();
   final_node_ = nullptr;
+  final_reeds_shepp_ = nullptr;
   count = 0;
 }
 
 // search
 void HybridAStarSearchMap::AddObstacles(geometry_msgs::Polygon p) {
-  grid_map_.AddPolygonObstacles(p, LIDAR_TO_REAR);
+  grid_map_->AddPolygonObstacles(p, LIDAR_TO_REAR);
 }
 
 void HybridAStarSearchMap::AddObstacleArrayPtr(
@@ -162,20 +168,20 @@ bool HybridAStarSearchMap::GenerateHeuristicMap() {
     return false;
   }
 
-  grid_map_.GenerateDestinationDistanceMap();
-  grid_map_.GenerateObstacleDistanceMap();
+  grid_map_->GenerateDestinationDistanceMap();
+  grid_map_->GenerateObstacleDistanceMap();
 
   if (!CollisionDection(start_node_->GetX(), start_node_->GetY(),
                         start_node_->GetPhi()) ||
       !CollisionDection(end_node_->GetX(), end_node_->GetY(),
                         end_node_->GetPhi())) {
-    ROS_ERROR("start/end points invalid!");
+    ROS_ERROR("start/end points collision detected!");
     return false;
   }
 
   start_node_->SetHeuristicCost(
-      grid_map_.GetHeuristic(start_node_->Cal2dIndex()));
-  end_node_->SetHeuristicCost(grid_map_.GetHeuristic(end_node_->Cal2dIndex()));
+      grid_map_->GetHeuristic(start_node_->Cal2dIndex()));
+  end_node_->SetHeuristicCost(grid_map_->GetHeuristic(end_node_->Cal2dIndex()));
   return true;
 }
 
@@ -207,19 +213,28 @@ bool HybridAStarSearchMap::Search() {
     std::vector<std::shared_ptr<Node3d>> next_nodes;
     NextNodeGenerator(next_nodes, node, -step_size_);
     NextNodeGenerator(next_nodes, node, step_size_);
-    // std::cout << "size: " << next_nodes.size() << std::endl;
+    double distance = DistanceToTerminateState(node);
 
-    for (std::shared_ptr<Node3d> next_node : next_nodes) {
-      if (IsTerminateState(next_node)) {
-        final_node_ = next_node;
-        std::cout << "Trajectory found! Expanded " << count << " nodes!"
-                  << std::endl;
-        return true;
+    if (node->analysis_step == 0) {
+      for (std::shared_ptr<Node3d> next_node : next_nodes) {
+        if (AnalyticExpansion(next_node)) {
+          final_node_ = next_node;
+          std::cout << "Trajectory found! Expanded " << count << " grids!"
+                    << std::endl;
+          return true;
+        }
+        next_node->analysis_step = std::min((int)distance / 3, 5);
+        open_pq.push(next_node);
       }
-      open_pq.push(next_node);
+    } else {
+      for (std::shared_ptr<Node3d> next_node : next_nodes) {
+        next_node->analysis_step = node->analysis_step - 1;
+        open_pq.push(next_node);
+      }
     }
   }
-  std::cout << "Path not found! Expanded " << count << " nodes!" << std::endl;
+
+  std::cout << "Path not found! Expanded " << count << " grids!" << std::endl;
   return false;
 }
 
@@ -228,7 +243,7 @@ double HybridAStarSearchMap::GetObstacleDistance(std::shared_ptr<Node3d> p) {
 }
 
 double HybridAStarSearchMap::GetObstacleDistance(double x, double y) {
-  auto point = grid_map_.GetNodeFromWorldCoord(x, y);
+  auto point = grid_map_->GetNodeFromWorldCoord(x, y);
   if (point == nullptr) {
     return 0;
   }
@@ -259,48 +274,92 @@ bool HybridAStarSearchMap::InsideWorldMap(const double x, const double y) {
 }
 
 bool HybridAStarSearchMap::CollisionDection(double x, double y, double phi) {
-  double midx = x + WHEEL_BASE_TO_BACK * std::cos(phi);
-  double midy = y + WHEEL_BASE_TO_BACK * std::sin(phi);
+  double midx = x + (VEHICLE_L / 2 - WHEEL_BASE_TO_BACK) * std::cos(phi);
+  double midy = y + (VEHICLE_L / 2 - WHEEL_BASE_TO_BACK) * std::sin(phi);
 
-  double dx = VEHICLE_L * std::cos(phi) / 2;
-  double dy = VEHICLE_L * std::sin(phi) / 2;
-
-  if (!InsideWorldMap(midx + dx, midy + dy) ||
-      !InsideWorldMap(midx - dx, midy - dy)) {
+  if (!InsideWorldMap(midx, midy)) {
     return false;
   }
 
-  if (GetObstacleDistance(midx + dx, midy + dy) <= 0.5 * VEHICLE_W) {
-    // std::cout << " head failure:" << GetObstacleDistance(x + dx, y + dy)
-    //           << std::endl;
-    return false;
+  double diag = GetObstacleDistance(midx, midy);
+  if (4 * diag * diag > VEHICLE_L * VEHICLE_L + VEHICLE_W * VEHICLE_W) {
+    return true;
   }
 
-  if (GetObstacleDistance(midx, midy) <= 0.8 * VEHICLE_W) {
-    // std::cout << " tail failure:" << GetObstacleDistance(x - dx, y - dy)
-    //           << std::endl;
-    return false;
+  std::vector<double> local_dx{-VEHICLE_L / 2, -VEHICLE_L / 2, VEHICLE_L / 2,
+                               VEHICLE_L / 2};
+  std::vector<double> local_dy{-VEHICLE_W / 2, VEHICLE_W / 2, VEHICLE_W / 2,
+                               -VEHICLE_W / 2};
+
+  std::vector<double> global_dx, global_dy;
+
+  for (int i = 0; i < 4; i++) {
+    global_dx.emplace_back(local_dx[i] * std::sin(phi) +
+                           local_dy[i] * std::cos(phi));
+    global_dy.emplace_back(local_dx[i] * std::cos(phi) -
+                           local_dy[i] * std::sin(phi));
   }
 
-  if (GetObstacleDistance(midx - dx, midy - dy) <= 0.5 * VEHICLE_W) {
-    // std::cout << " tail failure:" << GetObstacleDistance(x - dx, y - dy)
-    //           << std::endl;
-    return false;
+  for (int i = 0; i < 4; i++) {
+    double start_x = midx + global_dx[i];
+    double start_y = midy + global_dy[i];
+    double end_x = midx + global_dx[(i + 1) % 4];
+    double end_y = midy + global_dy[(i + 1) % 4];
+
+    if (!InsideWorldMap(start_x, start_y)) {
+      return false;
+    }
+
+    // DDA
+    int length = static_cast<int>(std::max(std::abs(start_x - end_x),
+                                           std::abs(start_y - end_y)) /
+                                  xy_grid_resolution_) +
+                 1;
+    double delta_x = (end_x - start_x) / length;
+    double delta_y = (end_y - start_y) / length;
+
+    double x = start_x, y = start_y;
+    for (int i = 0; i <= length; ++i) {
+      if (!InsideWorldMap(x, y)) {
+        return false;
+      }
+
+      std::shared_ptr<Node3d> grid_p = GetNodeFromWorldCoord(x, y, 0);
+      if (grid_p == nullptr || GetObstacleDistance(grid_p) <= 0.3) {
+        return false;
+      }
+
+      x += delta_x;
+      y += delta_y;
+    }
   }
+
+  // if (GetObstacleDistance(midx + dx, midy + dy) <= 0.5 * VEHICLE_W) {
+  //   return false;
+  // }
+
+  // if (GetObstacleDistance(midx, midy) <= 0.8 * VEHICLE_W) {
+  //   return false;
+  // }
+
+  // if (GetObstacleDistance(midx - dx, midy - dy) <= 0.5 * VEHICLE_W) {
+  //   return false;
+  // }
+
   return true;
 }
 
 // plot
 void HybridAStarSearchMap::PlotDebugMap() {
-  grid_map_.PlotBorders(xy_grid_resolution_);
-  grid_map_.PlotObstacleMap(xy_grid_resolution_);
+  grid_map_->PlotBorders(xy_grid_resolution_);
+  grid_map_->PlotObstacleMap(xy_grid_resolution_);
   PlotCostMap();
 }
 
 void HybridAStarSearchMap::PlotHeuristicMap() {
-  grid_map_.PlotHeuristicMap(xy_grid_resolution_);
-  grid_map_.PlotBorders(xy_grid_resolution_);
-  grid_map_.PlotObstacleMap(xy_grid_resolution_);
+  grid_map_->PlotHeuristicMap(xy_grid_resolution_);
+  grid_map_->PlotBorders(xy_grid_resolution_);
+  grid_map_->PlotObstacleMap(xy_grid_resolution_);
 }
 
 void HybridAStarSearchMap::PlotCostMap() {
@@ -322,7 +381,7 @@ void HybridAStarSearchMap::PlotCostMap() {
   while (iter3d != map_3d_.end()) {
     auto node3d = iter3d->second;
     auto node2d =
-        grid_map_.GetNodeFromGridCoord(node3d->GetGridX(), node3d->GetGridY());
+        grid_map_->GetNodeFromGridCoord(node3d->GetGridX(), node3d->GetGridY());
     node2d->expanded++;
     node2d->debug_cost = std::min(node2d->debug_cost, node3d->GetCost());
     temp_max = std::max(temp_max, node2d->debug_cost);
@@ -330,8 +389,8 @@ void HybridAStarSearchMap::PlotCostMap() {
   }
 
   std::unordered_map<std::string, std::shared_ptr<Node2d>>::iterator iter =
-      grid_map_.map_2d_.begin();
-  while (iter != grid_map_.map_2d_.end()) {
+      grid_map_->map_2d_.begin();
+  while (iter != grid_map_->map_2d_.end()) {
     auto node2d = iter->second;
     marker.id = marker_id;
     marker.color.r = node2d->debug_cost / temp_max;
@@ -360,13 +419,40 @@ void HybridAStarSearchMap::PlotTrajectory() {
   marker.header.frame_id = "base_link";
   marker.header.stamp = ros::Time::now();
   marker.ns = "";
+  int marker_id = 0;
 
   marker.lifetime = ros::Duration();
   marker.frame_locked = true;
   marker.type = visualization_msgs::Marker::CUBE;
   marker.action = visualization_msgs::Marker::ADD;
 
-  int marker_id = 0;
+  marker.scale.x = xy_grid_resolution_;
+  marker.scale.y = xy_grid_resolution_;
+  marker.scale.z = xy_grid_resolution_;
+
+  marker.lifetime = ros::Duration(3.333);
+  marker.pose.position.z = 0;
+
+  if (final_reeds_shepp_ != nullptr) {
+    for (int i = 0; i < final_reeds_shepp_->x.size(); i++) {
+      marker.id = marker_id;
+      if (final_reeds_shepp_->gear[i]) {
+        marker.color.r = 0.9f;
+        marker.color.b = 0.1f;
+        marker.color.g = 0.3f;
+      } else {
+        marker.color.r = 0.1f;
+        marker.color.b = 0.9f;
+        marker.color.g = 0.3f;
+      }
+      marker.color.a = 0.5;
+      marker.pose.position.x = final_reeds_shepp_->x[i];
+      marker.pose.position.y = final_reeds_shepp_->y[i];
+
+      marker_array.markers.push_back(marker);
+      ++marker_id;
+    }
+  }
 
   std::shared_ptr<Node3d> node = final_node_;
   while (node != nullptr) {
@@ -380,30 +466,26 @@ void HybridAStarSearchMap::PlotTrajectory() {
       marker.color.b = 1.0f;
       marker.color.g = 0.0f;
     }
-    marker.color.a = 0.5f;
+    marker.color.a = 0.2f;
     marker.pose.position.x = node->GetX();
     marker.pose.position.y = node->GetY();
-    marker.pose.position.z = 0;
-    marker.scale.x = xy_grid_resolution_;
-    marker.scale.y = xy_grid_resolution_;
-    marker.scale.z = xy_grid_resolution_;
-    marker.lifetime = ros::Duration(3.333);
+
     marker_array.markers.push_back(marker);
     ++marker_id;
     node = node->GetPreNode();
   }
 
-  pub.publish(marker_array);
+  pub_trajectory.publish(marker_array);
 }
 
 // node expansion
-bool HybridAStarSearchMap::IsTerminateState(std::shared_ptr<Node3d> node) {
+double HybridAStarSearchMap::DistanceToTerminateState(
+    std::shared_ptr<Node3d> node) {
   double x_diff = end_node_->GetX() - node->GetX();
   double y_diff = end_node_->GetY() - node->GetY();
   double phi_diff = end_node_->GetPhi() - node->GetPhi();
-  return std::sqrt(x_diff * x_diff + y_diff * y_diff) < xy_grid_resolution_ &&
-         (std::abs(phi_diff) < phi_grid_resolution_ ||
-          std::abs(std::abs(phi_diff) - 2 * M_PI) < phi_grid_resolution_);
+  return std::sqrt(x_diff * x_diff + y_diff * y_diff +
+                   std::abs(std::fmod(phi_diff, 2 * M_PI)));
 }
 
 void HybridAStarSearchMap::Update(double& x, double& y, double& phi,
@@ -432,7 +514,7 @@ void HybridAStarSearchMap::NextNodeGenerator(
         break;
       }
 
-      auto point = grid_map_.GetNodeFromWorldCoord(last_x, last_y);
+      auto point = grid_map_->GetNodeFromWorldCoord(last_x, last_y);
       if (point == nullptr || point->IsUnavailable()) {
         flag == false;
         break;
@@ -458,11 +540,36 @@ void HybridAStarSearchMap::NextNodeGenerator(
       if (p->GetPathCost() > path_cost) {
         p->SetDirection(forward);
         p->SetSteer(steer);
-        p->SetHeuristicCost(grid_map_.GetHeuristic(p->Cal2dIndex()));
+        p->SetHeuristicCost(grid_map_->GetHeuristic(p->Cal2dIndex()));
         p->SetPathCost(path_cost);
         p->SetPreNode(cur_node);
         next_nodes.emplace_back(p);
       }
     }
   }
+}
+
+bool HybridAStarSearchMap::AnalyticExpansion(
+    std::shared_ptr<Node3d> current_node) {
+  std::shared_ptr<ReedSheppPath> reeds_shepp_to_check =
+      std::make_shared<ReedSheppPath>();
+  if (!reed_shepp_generator_->ShortestRSP(current_node, end_node_,
+                                          *reeds_shepp_to_check)) {
+    return false;
+  }
+  // std::cout << "ShortestRSP found";
+
+  int size = reeds_shepp_to_check->x.size();
+
+  for (int i = size - 1; i > 0; i--) {
+    if (!CollisionDection(reeds_shepp_to_check->x[i],
+                          reeds_shepp_to_check->y[i],
+                          reeds_shepp_to_check->phi[i])) {
+      return false;
+    }
+  }
+  final_reeds_shepp_ = reeds_shepp_to_check;
+
+  std::cout << "Reach the end configuration with Reed Sharp";
+  return true;
 }

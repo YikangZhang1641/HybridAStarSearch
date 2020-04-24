@@ -1,4 +1,6 @@
 #include "planner/GridMap.h"
+#include "planner/ReedsSheppPath.h"
+
 class HybridAStarSearchMap {
  public:
   explicit HybridAStarSearchMap(const std::string motion_planning_conf_path);
@@ -43,13 +45,14 @@ class HybridAStarSearchMap {
 
  private:
   // node expansion
-  bool IsTerminateState(std::shared_ptr<Node3d> node);
+  double DistanceToTerminateState(std::shared_ptr<Node3d> node);
   void Update(double& x, double& y, double& phi, double steer, double dis);
   void NextNodeGenerator(std::vector<std::shared_ptr<Node3d>>& next_nodes,
                          std::shared_ptr<Node3d>, double step_size);
+  bool AnalyticExpansion(std::shared_ptr<Node3d> current_node);
 
   // heuristic map and search map
-  GridMap grid_map_;
+  std::shared_ptr<GridMap> grid_map_;
   std::unordered_map<std::string, std::shared_ptr<Node3d>> map_3d_;
   std::shared_ptr<Node3d> start_node_ = nullptr;
   std::shared_ptr<Node3d> end_node_ = nullptr;
@@ -62,7 +65,7 @@ class HybridAStarSearchMap {
 
   // visualization
   ros::NodeHandle nh;
-  ros::Publisher pub, pub_cost_map;
+  ros::Publisher pub_trajectory, pub_cost_map;
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker marker;
 
@@ -71,7 +74,7 @@ class HybridAStarSearchMap {
   double phi_grid_resolution_ = 0.2;
   int next_node_num_ = 5;
   double step_size_ = 0.02;
-  double MAX_STEER = 0.8;
+  double MAX_STEER = 0.47;
   double WHEEL_BASE = 2.0;
   double LIDAR_TO_REAR = 1.0;
   double VEHICLE_L = 2.0;
@@ -79,14 +82,20 @@ class HybridAStarSearchMap {
   double WHEEL_BASE_TO_BACK = 0.7;
 
   // penalty
-  double FORWARD_PENALTY = 1;
-  double BACKWARD_PENALTY = 5;
-  double STEER_PENALTY = 1;
-  double STEER_CHANGE_PENALTY = 1;
-  double OBSTACLE_PENALTY = 3;
+  double FORWARD_PENALTY = 0.1;
+  double BACKWARD_PENALTY = 0.1;
+  double STEER_PENALTY = 0;
+  double STEER_CHANGE_PENALTY = 0;
+  double OBSTACLE_PENALTY = 0;
   double SWITCH_PENALTY = 5.0;
 
   // counter
   double max_cost = std::numeric_limits<double>::min();
   int count = 0;
+
+  // RS path
+  std::shared_ptr<ReedShepp> reed_shepp_generator_;
+  std::shared_ptr<ReedSheppPath> final_reeds_shepp_;
+  double max_kappa_ = 0.2;  //  1.0/vehicle minimum radius 
+  double rs_step_size_ = 0.5;  //  to visualize rs path points
 };
