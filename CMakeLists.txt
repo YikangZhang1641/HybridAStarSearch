@@ -24,10 +24,10 @@ include
   ${PROJECT_SOURCE_DIR}/../
 )
 
-add_executable(HybridAStarTest src/HybridAStarSearchTest.cc src/HybridAStarSearchMap.cc src/GridMap.cc src/ReedsSheppPath.cc)
+add_executable(HybridAStarSearchTest src/HybridAStarSearchTest.cc src/HybridAStarSearchMap.cc src/GridMap.cc src/ReedsSheppPath.cc)
 add_executable(RSPathTest src/ReedsSheppPathTest.cc src/ReedsSheppPath.cc)
 
-target_link_libraries(HybridAStarTest
+target_link_libraries(HybridAStarSearchTest
   ${catkin_LIBRARIES}
 )
 target_link_libraries(RSPathTest

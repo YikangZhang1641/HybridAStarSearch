@@ -60,6 +60,8 @@ class HybridAStarSearchMap {
 
   // map params
   std::vector<double> XYbounds_{-10, 10, -10, 10};
+  double xy_grid_resolution_ = 0.3;
+  double phi_grid_resolution_ = 0.2;
   int max_grid_x_ = 0;
   int max_grid_y_ = 0;
 
@@ -70,8 +72,6 @@ class HybridAStarSearchMap {
   visualization_msgs::Marker marker;
 
   // params nees to be set manually
-  double xy_grid_resolution_ = 0.3;
-  double phi_grid_resolution_ = 0.2;
   int next_node_num_ = 5;
   double step_size_ = 0.02;
   double MAX_STEER = 0.47;
@@ -96,6 +96,6 @@ class HybridAStarSearchMap {
   // RS path
   std::shared_ptr<ReedShepp> reed_shepp_generator_;
   std::shared_ptr<ReedSheppPath> final_reeds_shepp_;
-  double max_kappa_ = 0.2;  //  1.0/vehicle minimum radius 
+  double max_kappa_ = 0.2;     //  1.0/vehicle minimum radius
   double rs_step_size_ = 0.5;  //  to visualize rs path points
 };
