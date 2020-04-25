@@ -1,0 +1,26 @@
+<launch>
+  <param name =  "next_node_num" type = "int" value = "5"/>
+  <param name =  "simulation_step_size" type = "double" value = "0.02"/>
+  <param name =  "max_steer" type = "double" value = "0.47"/>
+  <param name =  "wheel_base" type = "double" value = "1.4"/>
+  <param name =  "lidar_to_rear" type = "double" value = "0.3"/>
+  <param name =  "vehicle_l" type = "double" value = "2"/>
+  <param name =  "vehicle_w" type = "double" value = "1"/>
+  <param name =  "rear_to_back" type = "double" value = "0.3"/>
+
+    <param name =  "forward_penalty" type = "double" value = "0.1"/>
+  <param name =  "backward_penalty" type = "double" value = "0.1"/>
+  <param name =  "steer_penalty" type = "double" value = "0.02"/>
+  <param name =  "steer_change_penalty" type = "double" value = "0.5"/>
+  <param name =  "obstacle_penalty" type = "double" value = "0.02"/>
+  <param name =  "switch_penalty" type = "double" value = "5"/>
+
+  <param name =  "rs_visualize_step_size" type = "double" value = "0.2"/>
+ 
+  <node name="obstacle_polygon" pkg="planner" type="obstacle_example.py" />
+  
+  <node name="search_map" pkg = "planner" type = "HybridAStarSearchTest" output = "screen"/>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find planner)/launch/default.rviz" required="true" />
+
+</launch>

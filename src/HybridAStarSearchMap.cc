@@ -7,6 +7,25 @@ HybridAStarSearchMap::HybridAStarSearchMap(
   pub_cost_map =
       nh.advertise<visualization_msgs::MarkerArray>("vis_cost_map", 10);
 
+  nh.getParam("next_node_num", next_node_num_);
+  nh.getParam("simulation_step_size", step_size_);
+  nh.getParam("max_steer", MAX_STEER);
+  nh.getParam("wheel_base", WHEEL_BASE);
+  nh.getParam("lidar_to_rear", LIDAR_TO_REAR);
+  nh.getParam("vehicle_l", VEHICLE_L);
+  nh.getParam("vehicle_w", VEHICLE_W);
+  nh.getParam("rear_to_back", WHEEL_BASE_TO_BACK);
+
+  nh.getParam("forward_penalty", FORWARD_PENALTY);
+  nh.getParam("backward_penalty", BACKWARD_PENALTY);
+  nh.getParam("steer_penalty", STEER_PENALTY);
+  nh.getParam("steer_change_penalty", STEER_CHANGE_PENALTY);
+  nh.getParam("obstacle_penalty", OBSTACLE_PENALTY);
+  nh.getParam("switch_penalty", SWITCH_PENALTY);
+
+  max_kappa_ = std::tan(MAX_STEER) / WHEEL_BASE;
+  nh.getParam("rs_visualize_step_size", rs_step_size_);
+
   grid_map_ = std::make_shared<GridMap>();
   reed_shepp_generator_ =
       std::make_shared<ReedShepp>(max_kappa_, rs_step_size_);
@@ -430,7 +449,7 @@ void HybridAStarSearchMap::PlotTrajectory() {
   marker.scale.y = xy_grid_resolution_;
   marker.scale.z = xy_grid_resolution_;
 
-  marker.lifetime = ros::Duration(3.333);
+  marker.lifetime = ros::Duration(0.5);
   marker.pose.position.z = 0;
 
   if (final_reeds_shepp_ != nullptr) {
