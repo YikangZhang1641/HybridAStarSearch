@@ -449,7 +449,7 @@ void HybridAStarSearchMap::PlotTrajectory() {
   marker.scale.y = xy_grid_resolution_;
   marker.scale.z = xy_grid_resolution_;
 
-  marker.lifetime = ros::Duration(0.5);
+  marker.lifetime = ros::Duration(2);
   marker.pose.position.z = 0;
 
   if (final_reeds_shepp_ != nullptr) {
